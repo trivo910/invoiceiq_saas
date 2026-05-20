@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class Invoice extends Model
 {
@@ -16,7 +17,7 @@ class Invoice extends Model
         'discount_type', 'discount_value', 'discount_amount',
         'sub_total', 'total_cgst', 'total_sgst', 'total_igst', 'total_tax',
         'round_off', 'grand_total', 'amount_paid',
-        'visible_columns', 'notes', 'terms',
+        'visible_columns', 'notes', 'terms', 'shipping_address',
     ];
 
     protected $casts = [
@@ -95,11 +96,18 @@ class Invoice extends Model
         return "{$prefix}-{$year}-" . str_pad($seq, 4, '0', STR_PAD_LEFT);
     }
 
-    // Generate next invoice number and advance the sequence
+    // Atomically claim and advance the sequence — MUST be called inside DB::transaction()
     public static function nextNumber(): string
     {
-        $number = static::peekNumber();
-        set_setting('invoice_seq', (int) setting('invoice_seq', 1) + 1);
+        $row  = DB::table('settings')->where('key', 'invoice_seq')->lockForUpdate()->first();
+        $seq  = $row ? (int) $row->value : 1;
+
+        $prefix = setting('invoice_prefix', 'INV');
+        $year   = date('Y');
+        $number = "{$prefix}-{$year}-" . str_pad($seq, 4, '0', STR_PAD_LEFT);
+
+        set_setting('invoice_seq', $seq + 1);
+
         return $number;
     }
 }

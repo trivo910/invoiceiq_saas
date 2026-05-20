@@ -134,7 +134,7 @@
                 <div class="form-row form-row-2">
                     <div class="form-group">
                         <label class="form-label">GSTIN</label>
-                        <input name="gstin" id="fg" class="form-control" placeholder="27AABCT1234R1ZX" style="font-family:monospace;" maxlength="15">
+                        <input name="gstin" id="fg" class="form-control" placeholder="27AABCT1234R1ZX" style="font-family:monospace;" maxlength="15" oninput="autoStateFromGstin(this.value)">
                         <div class="error-msg" id="err-fg"></div>
                     </div>
                     <div class="form-group">
@@ -266,6 +266,16 @@ const STATE_CODES = {
 
 function setStateCode(state) {
     document.getElementById('fsc').value = STATE_CODES[state] || '';
+}
+
+function autoStateFromGstin(gstin) {
+    if (gstin.length < 2) return;
+    const code = gstin.slice(0, 2);
+    const name = Object.keys(STATE_CODES).find(k => STATE_CODES[k] === code);
+    if (name) {
+        document.getElementById('fs').value  = name;
+        document.getElementById('fsc').value = code;
+    }
 }
 
 function clearCErrors() {

@@ -26,7 +26,7 @@ class GstReportController extends Controller
         $report = $request->report ?? 'gstr1';
         $from   = $request->from   ?? now()->startOfMonth()->format('Y-m-d');
         $to     = $request->to     ?? now()->endOfMonth()->format('Y-m-d');
-        $period = $request->period ?? 'custom';
+        $period = $request->period ?? 'this_month';
 
         [$from, $to] = $this->resolvePeriod($period, $from, $to);
 

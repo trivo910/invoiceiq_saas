@@ -43,6 +43,13 @@
     <input type="hidden" name="email_subject" id="h_email_subject">
     <input type="hidden" name="email_body"    id="h_email_body">
 
+    <div id="client-errors" style="display:none;margin-bottom:16px;">
+        <div class="flash flash-error">
+            <strong>Please fix the following errors:</strong>
+            <ul id="client-errors-list" style="margin:6px 0 0 16px;padding:0;"></ul>
+        </div>
+    </div>
+
     <div class="inv-paper">
 
     
@@ -407,6 +414,7 @@
         </div>
         <div class="modal-body">
             <p style="font-size:12px;color:var(--t3);margin-bottom:16px;">Saved to item master for future invoices.</p>
+            <div id="qi-err" style="display:none;margin-bottom:12px;padding:9px 12px;background:var(--err-bg,#fef2f2);border:1px solid var(--err,#dc2626);border-radius:var(--radius);font-size:12px;color:var(--err,#dc2626);"></div>
             <div class="form-group">
                 <label class="form-label">Item Name <span class="req">*</span></label>
                 <input type="text" id="qi_name" class="form-control">
@@ -768,6 +776,9 @@ function pickCustomer(enc) {
 }
 function clearCustomer() {
     ['f_cust_id','f_cust_name','f_cust_gstin','f_cust_addr','f_cust_city','f_cust_state','f_cust_sc','f_cust_email'].forEach(id => document.getElementById(id).value='');
+    document.getElementById('f_pos').value      = '';
+    document.getElementById('f_pos_code').value = '';
+    document.getElementById('posInput').value   = '';
     document.getElementById('custSearchInput').value = '';
     document.getElementById('custSearchWrap').style.display = 'block';
     document.getElementById('custFilled').style.display     = 'none';
@@ -871,23 +882,52 @@ function openQiModal(idx, name) {
     document.getElementById('qi_gst').value  = '18';
     document.getElementById('qi_unit').value = 'Nos';
     document.getElementById('qi_type').value = 'service';
+    const err = document.getElementById('qi-err');
+    err.style.display = 'none';
+    err.textContent   = '';
     document.getElementById('qiModal').style.display='flex';
 }
 async function saveQuickItem() {
     const name = document.getElementById('qi_name').value.trim();
     const rate = parseFloat(document.getElementById('qi_rate').value)||0;
-    if (!name||!rate) { alert('Name and rate are required.'); return; }
+    const errEl = document.getElementById('qi-err');
+    errEl.style.display = 'none';
+
+    if (!name || !rate) {
+        errEl.textContent   = !name ? 'Item name is required.' : 'Rate must be greater than zero.';
+        errEl.style.display = 'block';
+        return;
+    }
+
     const payload = {
-        name, rate, gst_rate:parseFloat(document.getElementById('qi_gst').value)||18,
-        unit:document.getElementById('qi_unit').value,
-        hsn_sac:document.getElementById('qi_hsn').value.trim(),
-        description:document.getElementById('qi_desc').value.trim(),
-        type:document.getElementById('qi_type').value,
+        name, rate, gst_rate: parseFloat(document.getElementById('qi_gst').value)||18,
+        unit:        document.getElementById('qi_unit').value,
+        hsn_sac:     document.getElementById('qi_hsn').value.trim(),
+        description: document.getElementById('qi_desc').value.trim(),
+        type:        document.getElementById('qi_type').value,
     };
-    const r  = await fetch('/items',{method:'POST',headers:HDR,body:JSON.stringify(payload)});
-    const it = await r.json();
-    if (qiRowIdx !== null) pickItem(qiRowIdx, encodeURIComponent(JSON.stringify(it)));
-    document.getElementById('qiModal').style.display='none';
+
+    let res, json;
+    try {
+        res  = await fetch('/items', {method:'POST', headers:HDR, body:JSON.stringify(payload)});
+        json = await res.json();
+    } catch (e) {
+        errEl.textContent   = 'Network error — please try again.';
+        errEl.style.display = 'block';
+        return;
+    }
+
+    if (!res.ok) {
+        const msgs = json.errors
+            ? Object.values(json.errors).flat().join(' ')
+            : (json.message || 'Could not save item. Please try again.');
+        errEl.textContent   = msgs;
+        errEl.style.display = 'block';
+        return;
+    }
+
+    if (qiRowIdx !== null) pickItem(qiRowIdx, encodeURIComponent(JSON.stringify(json)));
+    document.getElementById('qiModal').style.display = 'none';
 }
 
 /* ── Quick add customer ── */
@@ -1090,7 +1130,57 @@ function doSendEmail() {
 }
 
 let _pendingStatus = null;
+
+function validateInvoiceForm() {
+    const errBox  = document.getElementById('client-errors');
+    const errList = document.getElementById('client-errors-list');
+    const errs    = [];
+
+    // Clear previous highlights
+    document.querySelectorAll('#itemsBody .td-inp').forEach(el => el.style.borderColor = '');
+    const custSearch = document.getElementById('custSearchInput');
+    if (custSearch) custSearch.style.borderColor = '';
+    errBox.style.display = 'none';
+    errList.innerHTML    = '';
+
+    // Customer must be selected
+    if (!document.getElementById('f_cust_name').value.trim()) {
+        if (custSearch) custSearch.style.borderColor = 'var(--err, #dc2626)';
+        errs.push('Please select a customer.');
+    }
+
+    // Must have at least one row
+    const rows = document.querySelectorAll('#itemsBody tr');
+    if (rows.length === 0) {
+        errs.push('Please add at least one line item.');
+    } else {
+        rows.forEach((tr, i) => {
+            const idx    = tr.dataset.idx;
+            const nameEl = tr.querySelector(`[name="rows[${idx}][item_name]"]`);
+            const qtyEl  = tr.querySelector(`[name="rows[${idx}][qty]"]`);
+
+            if (nameEl && !nameEl.value.trim()) {
+                nameEl.style.borderColor = 'var(--err, #dc2626)';
+                errs.push(`Row ${i + 1}: Item name is required.`);
+            }
+            if (qtyEl && (parseFloat(qtyEl.value) || 0) < 0.001) {
+                qtyEl.style.borderColor = 'var(--err, #dc2626)';
+                errs.push(`Row ${i + 1}: Quantity must be greater than zero.`);
+            }
+        });
+    }
+
+    if (errs.length) {
+        errList.innerHTML    = errs.map(e => `<li style="font-size:13px;">${esc(e)}</li>`).join('');
+        errBox.style.display = 'block';
+        errBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        return false;
+    }
+    return true;
+}
+
 function submitInvoice(status) {
+    if (!validateInvoiceForm()) return;
     if (status === 'sent' && EMAIL_ENABLED) {
         openEmailModal(status);
         return;

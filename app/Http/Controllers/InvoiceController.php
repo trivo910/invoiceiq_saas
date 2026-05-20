@@ -10,6 +10,7 @@ use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
 
 class InvoiceController extends Controller
@@ -55,23 +56,31 @@ class InvoiceController extends Controller
         $request->validate([
             'number'           => 'required|unique:invoices,number',
             'invoice_date'     => 'required|date',
+            'customer_name'    => 'required|string',
             'rows'             => 'required|array|min:1',
             'rows.*.item_name' => 'required|string',
             'rows.*.qty'       => 'required|numeric|min:0.001',
             'rows.*.rate'      => 'required|numeric|min:0',
-        ], $this->rowMessages($request));
-
-        // Advance the auto-sequence only if the user kept the suggested number
-        if ($request->number === Invoice::peekNumber()) {
-            Invoice::nextNumber();
-        }
+        ], array_merge(['customer_name.required' => 'Please select a customer.'], $this->rowMessages($request)));
 
         $invoice = null;
-        DB::transaction(function () use ($request, &$invoice) {
-            $invoice = Invoice::create($this->invoiceData($request));
-            $this->syncItems($invoice, $request->rows ?? []);
-            $this->recalculate($invoice);
-        });
+        try {
+            DB::transaction(function () use ($request, &$invoice) {
+                $data = $this->invoiceData($request);
+
+                // Atomically claim the next sequence number when the user kept the suggestion
+                if ($request->number === Invoice::peekNumber()) {
+                    $data['number'] = Invoice::nextNumber();
+                }
+
+                $invoice = Invoice::create($data);
+                $this->syncItems($invoice, $request->rows ?? []);
+                $this->recalculate($invoice);
+            });
+        } catch (UniqueConstraintViolationException) {
+            return back()->withInput()
+                ->withErrors(['number' => 'This invoice number was just taken by another submission. Please change the number and try again.']);
+        }
         assert($invoice instanceof Invoice);
 
         Cache::forget('dashboard.stats');
@@ -96,11 +105,12 @@ class InvoiceController extends Controller
         $request->validate([
             'number'           => "required|unique:invoices,number,{$invoice->id}",
             'invoice_date'     => 'required|date',
+            'customer_name'    => 'required|string',
             'rows'             => 'required|array|min:1',
             'rows.*.item_name' => 'required|string',
             'rows.*.qty'       => 'required|numeric|min:0.001',
             'rows.*.rate'      => 'required|numeric|min:0',
-        ], $this->rowMessages($request));
+        ], array_merge(['customer_name.required' => 'Please select a customer.'], $this->rowMessages($request)));
 
         DB::transaction(function () use ($request, $invoice) {
             $invoice->update($this->invoiceData($request));
@@ -307,6 +317,7 @@ class InvoiceController extends Controller
             'visible_columns'         => $request->visible_columns,
             'notes'                   => $request->notes,
             'terms'                   => $request->terms,
+            'shipping_address'        => $request->shipping_address,
         ];
     }
 
