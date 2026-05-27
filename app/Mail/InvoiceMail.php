@@ -42,22 +42,23 @@ class InvoiceMail extends Mailable
 
     private function makeZip(string $filename, string $content): string
     {
+        $uid    = uniqid('inv_', true);
         $tmp    = sys_get_temp_dir() . DIRECTORY_SEPARATOR;
-        $pdfTmp = $tmp . $filename;
-        $zipTmp = $tmp . uniqid('inv_', true) . '.zip';
+        $pdfTmp = $tmp . $uid . '_' . $filename;   // unique per request — no collision
+        $zipTmp = $tmp . $uid . '.zip';
 
         file_put_contents($pdfTmp, $content);
 
-        $zip = new \ZipArchive();
-        $zip->open($zipTmp, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
-        $zip->addFile($pdfTmp, $filename);
-        $zip->close();
+        try {
+            $zip = new \ZipArchive();
+            $zip->open($zipTmp, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+            $zip->addFile($pdfTmp, $filename);
+            $zip->close();
 
-        $zipContent = file_get_contents($zipTmp);
-
-        @unlink($pdfTmp);
-        @unlink($zipTmp);
-
-        return $zipContent;
+            return file_get_contents($zipTmp);
+        } finally {
+            @unlink($pdfTmp);
+            @unlink($zipTmp);
+        }
     }
 }

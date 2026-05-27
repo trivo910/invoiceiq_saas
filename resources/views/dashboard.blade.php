@@ -32,7 +32,7 @@
     </div>
 
     {{-- Quick info row --}}
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:28px;">
+    <div class="quick-info-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:28px;">
         <div class="card" style="padding:16px 20px;">
             <div class="stat-label">Total Invoices</div>
             <div style="font-size:20px;font-weight:600;color:var(--t1);margin-top:4px;">{{ $stats['invoice_count'] }}</div>

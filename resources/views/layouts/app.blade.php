@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Trivo - InvoiceIQ') — Trivo - InvoiceIQ</title>
-    <link rel="stylesheet" href="{{ asset('css/app.css?v=3') }}">
+    <link rel="stylesheet" href="{{ asset('css/app.css?v=8') }}">
     <style>
         /* ── Sidebar user panel ────────────────── */
         .sidebar-footer {
@@ -77,6 +77,25 @@
     @stack('styles')
 </head>
 <body>
+
+{{-- Mobile top bar (visible only on ≤768px) --}}
+<header class="mob-bar no-print" id="mobBar">
+    <button class="mob-hamburger" id="mobHamburger" aria-label="Open menu">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M2 4.5h14M2 9h14M2 13.5h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+    </button>
+    <span class="mob-brand">InvoiceIQ</span>
+    @if(auth()->check() && auth()->user()->canWrite())
+        <a href="{{ route('invoices.create') }}" class="mob-new-btn">+ New</a>
+    @else
+        <span class="mob-placeholder"></span>
+    @endif
+</header>
+
+{{-- Sidebar backdrop (mobile overlay) --}}
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
 <div class="app-shell">
 
     {{-- Sidebar --}}
@@ -236,7 +255,6 @@
         wrap.addEventListener('transitionend', function () { wrap.remove(); }, { once: true });
     };
 
-    // success → 4 s, warning → 6 s, error → stays until closed
     document.querySelectorAll('.flash-wrap').forEach(function (wrap) {
         if (wrap.querySelector('.flash-error')) return;
         var delay = wrap.querySelector('.flash-warning') ? 6000 : 4000;
@@ -246,46 +264,83 @@
     });
 
     const STORAGE_KEY = 'sidebarCollapsed';
-    const shell   = document.querySelector('.app-shell');
-    const sidebar = document.querySelector('.sidebar');
+    const shell    = document.querySelector('.app-shell');
+    const sidebar  = document.querySelector('.sidebar');
+    const backdrop = document.getElementById('sidebarBackdrop');
 
-    /* ── Sidebar toggle ── */
-    if (localStorage.getItem(STORAGE_KEY) === '1') {
+    const isMobile = () => window.innerWidth <= 768;
+
+    /* ── Tooltip element (desktop collapsed state) ── */
+    const tip = document.createElement('div');
+    tip.id = 'sidebar-tip';
+    document.body.appendChild(tip);
+    let hideTimer = null;
+
+    /* ── Desktop: restore collapsed state ── */
+    if (!isMobile() && localStorage.getItem(STORAGE_KEY) === '1') {
         shell.classList.add('sidebar-collapsed');
     }
 
+    /* ── Desktop sidebar toggle (collapse/expand) ── */
     document.getElementById('sidebarToggle').addEventListener('click', function () {
+        if (isMobile()) return; // mobile uses mob-hamburger instead
         shell.classList.toggle('sidebar-collapsed');
         localStorage.setItem(STORAGE_KEY, shell.classList.contains('sidebar-collapsed') ? '1' : '0');
         tip.classList.remove('visible');
     });
 
-    /* ── Collapsed tooltip ── */
-    const tip = document.createElement('div');
-    tip.id = 'sidebar-tip';
-    document.body.appendChild(tip);
+    /* ── Mobile hamburger → open sidebar overlay ── */
+    const mobHamburger = document.getElementById('mobHamburger');
+    if (mobHamburger) {
+        mobHamburger.addEventListener('click', function () {
+            const isOpen = sidebar.classList.toggle('mob-open');
+            backdrop.classList.toggle('visible', isOpen);
+            document.body.style.overflow = isOpen ? 'hidden' : '';
+        });
+    }
 
-    let hideTimer = null;
+    /* ── Backdrop tap → close sidebar ── */
+    backdrop.addEventListener('click', function () {
+        sidebar.classList.remove('mob-open');
+        backdrop.classList.remove('visible');
+        document.body.style.overflow = '';
+    });
 
+    /* ── Nav link tap on mobile → close sidebar ── */
+    sidebar.querySelectorAll('.nav-item').forEach(function (link) {
+        link.addEventListener('click', function () {
+            if (!isMobile()) return;
+            sidebar.classList.remove('mob-open');
+            backdrop.classList.remove('visible');
+            document.body.style.overflow = '';
+        });
+    });
+
+    /* ── Resize: clean up mobile state when returning to desktop ── */
+    window.addEventListener('resize', function () {
+        if (!isMobile()) {
+            sidebar.classList.remove('mob-open');
+            backdrop.classList.remove('visible');
+            document.body.style.overflow = '';
+        }
+    });
+
+    /* ── Desktop collapsed tooltip ── */
     sidebar.querySelectorAll('[data-tooltip]').forEach(function (el) {
         el.addEventListener('mouseenter', function () {
+            if (isMobile()) return;
             if (!shell.classList.contains('sidebar-collapsed')) return;
-
             clearTimeout(hideTimer);
             const label = el.dataset.tooltip;
             if (!label) return;
-
             const rect = el.getBoundingClientRect();
-            tip.textContent  = label;
-            tip.style.top    = (rect.top + rect.height / 2) + 'px';
-            tip.style.left   = (rect.right + 10) + 'px';
+            tip.textContent = label;
+            tip.style.top   = (rect.top + rect.height / 2) + 'px';
+            tip.style.left  = (rect.right + 10) + 'px';
             tip.classList.add('visible');
         });
-
         el.addEventListener('mouseleave', function () {
-            hideTimer = setTimeout(function () {
-                tip.classList.remove('visible');
-            }, 80);
+            hideTimer = setTimeout(function () { tip.classList.remove('visible'); }, 80);
         });
     });
 })();

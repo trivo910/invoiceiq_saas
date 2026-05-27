@@ -28,10 +28,10 @@
 </div>
 @endif
 
-<div style="display:flex;gap:18px;padding:24px;align-items:flex-start;">
+<div class="inv-builder-wrap" style="display:flex;gap:18px;padding:24px;align-items:flex-start;">
 
 {{-- ═══ Invoice Paper ══════════════════════════════════════ --}}
-<div style="flex:1;min-width:0;">
+<div class="inv-left-col" style="flex:1;min-width:0;">
 <form id="invoiceForm" method="POST"
       action="{{ $isEdit ? route('invoices.update',$invoice) : route('invoices.store') }}">
     @csrf
@@ -183,7 +183,9 @@
             <tbody id="itemsBody"></tbody>
         </table>
         </div>
-        <button type="button" class="add-row-btn" onclick="addRow()">
+        {{-- Mobile card list (hidden on desktop) --}}
+        <div class="mob-items-list" id="mobItemsList"></div>
+        <button type="button" class="add-row-btn" onclick="addItemBtn()">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <circle cx="7" cy="7" r="6.5" stroke="currentColor" stroke-width="1.2"/>
                 <path d="M7 4v6M4 7h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -598,10 +600,90 @@
     </div>
 </div>
 
+{{-- ═══ Mobile Item Editor Drawer ═══════════════════════════ --}}
+<div class="item-drawer" id="itemDrawer">
+    <div class="drawer-head">
+        <div class="drawer-title" id="drawerTitle">Edit Item</div>
+        <button type="button" class="drawer-close" onclick="closeItemDrawer()">×</button>
+    </div>
+    <div class="drawer-body">
+        <div class="form-group">
+            <label class="form-label">Item / Service <span class="req">*</span></label>
+            <div style="position:relative;">
+                <input type="text" id="dr_name" class="form-control" placeholder="Type to search items…"
+                       autocomplete="off" oninput="onDrNameType(this)">
+                <div id="dr_item_dd" class="item-dd dr-item-dd" style="display:none;"></div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Description</label>
+            <input type="text" id="dr_desc" class="form-control" placeholder="Brief description">
+        </div>
+        <div class="form-row form-row-2">
+            <div class="form-group">
+                <label class="form-label">HSN/SAC</label>
+                <input type="text" id="dr_hsn" class="form-control" placeholder="998314">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Unit</label>
+                <select id="dr_unit" class="form-control">
+                    @foreach(['Nos','Pcs','Hrs','Kg','Ltr','Month','Year','Sqft'] as $u)
+                        <option>{{ $u }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+        <div class="form-row form-row-2">
+            <div class="form-group">
+                <label class="form-label">Quantity <span class="req">*</span></label>
+                <input type="number" id="dr_qty" class="form-control" min="0.001" step="0.001" value="1" oninput="drawerRecalc()">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Rate (₹) <span class="req">*</span></label>
+                <input type="number" id="dr_rate" class="form-control" min="0" step="0.01" value="0" oninput="drawerRecalc()">
+            </div>
+        </div>
+        <div class="form-row form-row-2">
+            <div class="form-group">
+                <label class="form-label">Discount %</label>
+                <input type="number" id="dr_disc" class="form-control" min="0" max="100" step="0.01" value="0" oninput="drawerRecalc()">
+            </div>
+            <div class="form-group">
+                <label class="form-label">GST Rate</label>
+                <select id="dr_gst" class="form-control" onchange="drawerRecalc()">
+                    @foreach([0,5,12,18,28] as $g)
+                        <option value="{{ $g }}" {{ $g===18?'selected':'' }}>{{ $g }}%</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+        <div class="drawer-preview">
+            <div class="dp-row"><span>Taxable Amount</span><span id="dr_taxable">₹0.00</span></div>
+            <div class="dp-row"><span>GST</span><span id="dr_gst_amt">₹0.00</span></div>
+            <div class="dp-total"><span>Row Total</span><span id="dr_total">₹0.00</span></div>
+        </div>
+    </div>
+    <div class="drawer-foot">
+        <button type="button" class="btn" style="flex:1;" onclick="closeItemDrawer()">Cancel</button>
+        <button type="button" class="btn btn-primary" style="flex:2;" onclick="saveItemDrawer()">Done</button>
+    </div>
+</div>
+
+{{-- ═══ Submit Loader Overlay ════════════════════════════════ --}}
+<div id="formLoader" style="display:none;position:fixed;inset:0;background:rgba(10,12,20,.6);z-index:9998;align-items:center;justify-content:center;flex-direction:column;gap:14px;">
+    <div class="form-spinner"></div>
+    <div id="loaderMsg" style="color:rgba(255,255,255,.9);font-size:14px;font-weight:500;letter-spacing:.3px;">Saving…</div>
+</div>
+
 @push('styles')
 <link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
 <style>
 .hidden-col { display: none !important; }
+/* Drawer dropdown: absolute inside its wrapper, not fixed */
+.dr-item-dd { position: absolute !important; top: calc(100% + 2px) !important; left: 0 !important; right: 0 !important; width: auto !important; max-height: 220px; overflow-y: auto; }
+/* Submit loader spinner */
+.form-spinner { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,.18); border-top-color: #fff; border-radius: 50%; animation: formSpin .7s linear infinite; }
+@keyframes formSpin { to { transform: rotate(360deg); } }
 #emailBodyEditor .ql-editor { min-height:120px; max-height:220px; overflow-y:auto; font-size:13px; font-family:var(--font); line-height:1.6; }
 #emailBodyEditor .ql-toolbar.ql-snow { border-radius:var(--radius) var(--radius) 0 0; border-color:var(--bdr2); background:var(--s2); }
 #emailBodyEditor .ql-container.ql-snow { border-color:var(--bdr2); border-radius:0 0 var(--radius) var(--radius); }
@@ -625,7 +707,7 @@ const HDR     = {'Content-Type':'application/json','X-CSRF-TOKEN':CSRF,'X-Reques
 const STATE_MAP = {'01':'Jammu and Kashmir','02':'Himachal Pradesh','03':'Punjab','04':'Chandigarh','05':'Uttarakhand','06':'Haryana','07':'Delhi','08':'Rajasthan','09':'Uttar Pradesh','10':'Bihar','11':'Sikkim','12':'Arunachal Pradesh','13':'Nagaland','14':'Manipur','15':'Mizoram','16':'Tripura','17':'Meghalaya','18':'Assam','19':'West Bengal','20':'Jharkhand','21':'Odisha','22':'Chhattisgarh','23':'Madhya Pradesh','24':'Gujarat','26':'Dadra and Nagar Haveli and Daman and Diu','27':'Maharashtra','29':'Karnataka','30':'Goa','31':'Lakshadweep','32':'Kerala','33':'Tamil Nadu','34':'Puducherry','35':'Andaman and Nicobar Islands','36':'Telangana','37':'Andhra Pradesh','38':'Ladakh'};
 const STATE_CODES_QC = {'Andaman and Nicobar Islands':'35','Andhra Pradesh':'37','Arunachal Pradesh':'12','Assam':'18','Bihar':'10','Chandigarh':'04','Chhattisgarh':'22','Dadra and Nagar Haveli and Daman and Diu':'26','Delhi':'07','Goa':'30','Gujarat':'24','Haryana':'06','Himachal Pradesh':'02','Jammu and Kashmir':'01','Jharkhand':'20','Karnataka':'29','Kerala':'32','Ladakh':'38','Lakshadweep':'31','Madhya Pradesh':'23','Maharashtra':'27','Manipur':'14','Meghalaya':'17','Mizoram':'15','Nagaland':'13','Odisha':'21','Puducherry':'34','Punjab':'03','Rajasthan':'08','Sikkim':'11','Tamil Nadu':'33','Telangana':'36','Tripura':'16','Uttar Pradesh':'09','Uttarakhand':'05','West Bengal':'19'};
 
-let rowCount = 0, qiRowIdx = null;
+let rowCount = 0, qiRowIdx = null, _qiFromDrawer = false;
 let visCol   = @json($visCol);
 let searchT  = {};
 
@@ -636,6 +718,7 @@ document.addEventListener('DOMContentLoaded', () => {
     else seed.forEach(r => addRow(r));
     syncVisColInput();
     updateGstTag();
+    syncMobItems();
 
     document.getElementById('custSearchInput')
         .addEventListener('input', debounce(searchCustomers, 260));
@@ -645,7 +728,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     document.addEventListener('click', e => {
         if (!e.target.closest('#custSearchWrap'))  document.getElementById('custDd').style.display='none';
-        if (!e.target.closest('.item-cell'))        document.querySelectorAll('.item-dd').forEach(d=>d.style.display='none');
+        if (!e.target.closest('.item-cell'))        document.querySelectorAll('.item-dd:not(.dr-item-dd)').forEach(d=>d.style.display='none');
+        if (!e.target.closest('#dr_name') && !e.target.closest('#dr_item_dd'))
+            document.getElementById('dr_item_dd').style.display = 'none';
     });
     document.getElementById('posInput').addEventListener('input', () => {
         document.getElementById('f_pos').value = document.getElementById('posInput').value;
@@ -717,7 +802,7 @@ function addRow(d={}) {
     recalc();
 }
 
-function delRow(btn) { btn.closest('tr').remove(); renumber(); recalc(); }
+function delRow(btn) { btn.closest('tr').remove(); renumber(); recalc(); syncMobItems(); }
 function renumber()  { document.querySelectorAll('#itemsBody tr').forEach((t,i)=>t.querySelector('.td-num').textContent=i+1); }
 
 /* ── Item auto-suggest ── */
@@ -965,7 +1050,12 @@ async function saveQuickItem() {
         return;
     }
 
-    if (qiRowIdx !== null) pickItem(qiRowIdx, encodeURIComponent(JSON.stringify(json)));
+    if (_qiFromDrawer) {
+        _qiFromDrawer = false;
+        pickItemInDrawer(encodeURIComponent(JSON.stringify(json)));
+    } else if (qiRowIdx !== null) {
+        pickItem(qiRowIdx, encodeURIComponent(JSON.stringify(json)));
+    }
     document.getElementById('qiModal').style.display = 'none';
 }
 
@@ -1134,6 +1224,7 @@ function saveWithoutEmail() {
     setStatus(_pendingStatus || 'sent');
     syncVisColInput();
     closeEmailModal();
+    showFormLoader('Saving invoice…');
     document.getElementById('invoiceForm').requestSubmit();
 }
 
@@ -1154,6 +1245,7 @@ function doSendEmail() {
         document.getElementById('es_subject').value  = subject;
         document.getElementById('es_body').value     = body;
         closeEmailModal();
+        showFormLoader('Sending email…');
         document.getElementById('emailSendForm').submit();
     } else {
         document.getElementById('h_to_email').value      = to;
@@ -1164,6 +1256,7 @@ function doSendEmail() {
         setStatus(_pendingStatus || 'sent');
         syncVisColInput();
         closeEmailModal();
+        showFormLoader('Sending email…');
         document.getElementById('invoiceForm').requestSubmit();
     }
 }
@@ -1218,12 +1311,24 @@ function validateInvoiceForm() {
     return true;
 }
 
+function showFormLoader(msg) {
+    document.getElementById('loaderMsg').textContent = msg || 'Saving…';
+    document.getElementById('formLoader').style.display = 'flex';
+    // Freeze all action buttons so second tap does nothing
+    document.querySelectorAll('.act-btn').forEach(function(el) {
+        el.style.pointerEvents = 'none';
+        el.style.opacity = '.55';
+    });
+}
+
 function submitInvoice(status) {
     if (!validateInvoiceForm()) return;
     if (status === 'sent' && EMAIL_ENABLED) {
         openEmailModal(status);
         return;
     }
+    const msgs = { draft: 'Saving draft…', paid: 'Marking as paid…', sent: 'Saving invoice…' };
+    showFormLoader(msgs[status] || 'Saving…');
     setStatus(status);
     syncVisColInput();
     document.getElementById('invoiceForm').requestSubmit();
@@ -1248,6 +1353,194 @@ function fmtNS(n) {
     if(s.length>3){ let l=s.slice(-3),r=s.slice(0,-3).replace(/\B(?=(\d{2})+(?!\d))/g,','); s=r+','+l; }
     return s;
 }
+/* ── Mobile item drawer ── */
+let _drawerIdx = null;
+
+function isMobView() { return window.innerWidth <= 768; }
+
+function syncMobItems() {
+    if (!isMobView()) return;
+    const list = document.getElementById('mobItemsList');
+    if (!list) return;
+    list.innerHTML = '';
+    document.querySelectorAll('#itemsBody tr').forEach(function(tr) {
+        const idx  = tr.dataset.idx;
+        const name = tr.querySelector(`[name="rows[${idx}][item_name]"]`)?.value || '—';
+        const qty  = parseFloat(tr.querySelector(`[name="rows[${idx}][qty]"]`)?.value) || 0;
+        const rate = parseFloat(tr.querySelector(`[name="rows[${idx}][rate]"]`)?.value) || 0;
+        const disc = parseFloat(tr.querySelector(`[name="rows[${idx}][discount_percent]"]`)?.value) || 0;
+        const gst  = parseFloat(tr.querySelector(`[name="rows[${idx}][gst_rate]"]`)?.value) || 0;
+        const taxable = qty * rate * (1 - disc / 100);
+        const total   = taxable * (1 + gst / 100);
+        const card = document.createElement('div');
+        card.className = 'mob-item-card';
+        card.dataset.idx = idx;
+        card.innerHTML =
+            `<div class="mob-item-info">` +
+                `<div class="mob-item-name">${esc(name)}</div>` +
+                `<div class="mob-item-meta">${qty} × ₹${fmtN(rate)}` +
+                    (disc > 0 ? ` · ${disc}% off` : '') +
+                    ` · GST ${gst}%</div>` +
+            `</div>` +
+            `<div class="mob-item-actions">` +
+                `<div class="mob-item-total">₹${fmtN(total)}</div>` +
+                `<button type="button" class="mob-item-del">×</button>` +
+            `</div>`;
+        card.querySelector('.mob-item-info').addEventListener('click', function() {
+            openItemDrawer(parseInt(idx));
+        });
+        card.querySelector('.mob-item-del').addEventListener('click', function(e) {
+            e.stopPropagation();
+            const tableRow = document.querySelector(`#itemsBody tr[data-idx="${idx}"]`);
+            if (tableRow) { tableRow.remove(); renumber(); recalc(); }
+            syncMobItems();
+        });
+        list.appendChild(card);
+    });
+}
+
+function openItemDrawer(idx) {
+    _drawerIdx = idx;
+    const tr = document.querySelector(`#itemsBody tr[data-idx="${idx}"]`);
+    if (!tr) return;
+    const rowNum = Array.from(document.querySelectorAll('#itemsBody tr')).indexOf(tr) + 1;
+    document.getElementById('drawerTitle').textContent = 'Item ' + rowNum;
+    document.getElementById('dr_name').value = tr.querySelector(`[name="rows[${idx}][item_name]"]`)?.value || '';
+    document.getElementById('dr_desc').value = tr.querySelector(`[name="rows[${idx}][description]"]`)?.value || '';
+    document.getElementById('dr_hsn').value  = tr.querySelector(`[name="rows[${idx}][hsn_sac]"]`)?.value || '';
+    document.getElementById('dr_qty').value  = tr.querySelector(`[name="rows[${idx}][qty]"]`)?.value || 1;
+    document.getElementById('dr_unit').value = tr.querySelector(`[name="rows[${idx}][unit]"]`)?.value || 'Nos';
+    document.getElementById('dr_rate').value = tr.querySelector(`[name="rows[${idx}][rate]"]`)?.value || 0;
+    document.getElementById('dr_disc').value = tr.querySelector(`[name="rows[${idx}][discount_percent]"]`)?.value || 0;
+    document.getElementById('dr_gst').value  = tr.querySelector(`[name="rows[${idx}][gst_rate]"]`)?.value || 18;
+    drawerRecalc();
+    document.getElementById('itemDrawer').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    setTimeout(function() { document.getElementById('dr_name').focus(); }, 300);
+}
+
+function closeItemDrawer() {
+    document.getElementById('itemDrawer').classList.remove('open');
+    document.body.style.overflow = '';
+    _drawerIdx = null;
+}
+
+function saveItemDrawer() {
+    if (_drawerIdx === null) return;
+    const idx = _drawerIdx;
+    const tr  = document.querySelector(`#itemsBody tr[data-idx="${idx}"]`);
+    if (!tr) return;
+    const set = function(name, val) {
+        const el = tr.querySelector(`[name="rows[${idx}][${name}]"]`);
+        if (el) el.value = val;
+    };
+    set('item_name',        document.getElementById('dr_name').value);
+    set('description',      document.getElementById('dr_desc').value);
+    set('hsn_sac',          document.getElementById('dr_hsn').value);
+    set('qty',              document.getElementById('dr_qty').value);
+    set('unit',             document.getElementById('dr_unit').value);
+    set('rate',             document.getElementById('dr_rate').value);
+    set('discount_percent', document.getElementById('dr_disc').value);
+    set('gst_rate',         document.getElementById('dr_gst').value);
+    recalc();
+    syncMobItems();
+    closeItemDrawer();
+}
+
+function drawerRecalc() {
+    const qty  = parseFloat(document.getElementById('dr_qty').value) || 0;
+    const rate = parseFloat(document.getElementById('dr_rate').value) || 0;
+    const disc = parseFloat(document.getElementById('dr_disc').value) || 0;
+    const gst  = parseFloat(document.getElementById('dr_gst').value) || 0;
+    const taxable = qty * rate * (1 - disc / 100);
+    const tax     = taxable * gst / 100;
+    const total   = taxable + tax;
+    setText('dr_taxable', '₹' + fmtN(taxable));
+    setText('dr_gst_amt', '₹' + fmtN(tax));
+    setText('dr_total',   '₹' + fmtN(total));
+}
+
+function addItemBtn() {
+    addRow();
+    if (isMobView()) {
+        const rows = document.querySelectorAll('#itemsBody tr');
+        if (rows.length) {
+            const lastRow = rows[rows.length - 1];
+            syncMobItems();
+            openItemDrawer(parseInt(lastRow.dataset.idx));
+        }
+    }
+}
+
+window.addEventListener('resize', function() {
+    if (window.innerWidth > 768) closeItemDrawer();
+});
+
+/* ── Drawer item search ── */
+let drSearchT = null;
+
+function onDrNameType(inp) {
+    clearTimeout(drSearchT);
+    const q = inp.value.trim();
+    document.getElementById('dr_item_dd').style.display = 'none';
+    if (!q) return;
+    drSearchT = setTimeout(function() { fetchDrItems(q, inp.value); }, 240);
+}
+
+async function fetchDrItems(q, raw) {
+    try {
+        const r = await fetch('/items/search?q=' + encodeURIComponent(q), {headers: HDR});
+        const d = await r.json();
+        showDrItemDd(d, raw);
+    } catch(e) {}
+}
+
+function showDrItemDd(items, raw) {
+    const dd = document.getElementById('dr_item_dd');
+    if (!dd) return;
+    let h = items.map(function(it) {
+        return '<div class="item-opt" onpointerdown="pickItemInDrawer(\'' + encodeURIComponent(JSON.stringify(it)) + '\')">' +
+               '<div class="io-name">' + esc(it.name) + '</div>' +
+               '<div class="io-meta">₹' + fmtN(it.rate) + ' &nbsp;·&nbsp; ' + it.gst_rate + '% GST &nbsp;·&nbsp; HSN: ' + (it.hsn_sac||'—') + '</div>' +
+               '</div>';
+    }).join('');
+    const exact = items.find(function(i) { return i.name.toLowerCase() === raw.toLowerCase(); });
+    if (!exact && raw.trim()) {
+        h += '<div class="item-opt io-create" onpointerdown="openQiFromDrawer(\'' + raw.replace(/'/g, "\\'") + '\')">' +
+             '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5.5" stroke="currentColor" stroke-width="1.2"/><path d="M6 3v6M3 6h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>' +
+             ' Create &ldquo;' + esc(raw) + '&rdquo;</div>';
+    }
+    if (!h) { dd.style.display = 'none'; return; }
+    dd.innerHTML = h;
+    dd.style.display = 'block';
+}
+
+function openQiFromDrawer(name) {
+    document.getElementById('dr_item_dd').style.display = 'none';
+    _qiFromDrawer = true;
+    qiRowIdx = null;
+    document.getElementById('qi_name').value = name || '';
+    ['qi_rate','qi_hsn','qi_desc'].forEach(function(id) { document.getElementById(id).value = ''; });
+    document.getElementById('qi_gst').value  = '18';
+    document.getElementById('qi_unit').value = 'Nos';
+    document.getElementById('qi_type').value = 'service';
+    const err = document.getElementById('qi-err');
+    err.style.display = 'none'; err.textContent = '';
+    document.getElementById('qiModal').style.display = 'flex';
+}
+
+function pickItemInDrawer(enc) {
+    const it = JSON.parse(decodeURIComponent(enc));
+    document.getElementById('dr_name').value = it.name || '';
+    document.getElementById('dr_desc').value = it.description || '';
+    document.getElementById('dr_hsn').value  = it.hsn_sac || '';
+    document.getElementById('dr_rate').value = it.rate || 0;
+    document.getElementById('dr_gst').value  = it.gst_rate || 18;
+    document.getElementById('dr_unit').value = it.unit || 'Nos';
+    document.getElementById('dr_item_dd').style.display = 'none';
+    drawerRecalc();
+}
+
 function n2w(num) {
     num=Math.round(num||0);
     if(!num) return 'Zero Rupees Only';

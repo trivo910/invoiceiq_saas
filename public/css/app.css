@@ -368,6 +368,8 @@ table.items-tbl .c          { text-align: center; }
 .modal-close   { background: none; border: none; cursor: pointer; font-size: 22px; color: var(--t4); line-height: 1; padding: 0 4px; }
 .modal-body    { padding: 20px 22px; overflow-y: auto; flex: 1; min-height: 0; }
 .modal-foot    { padding: 14px 22px; border-top: 1px solid var(--bdr); display: flex; gap: 10px; flex-shrink: 0; }
+/* form wraps modal-body+modal-foot in several modals — it must join the flex chain */
+.modal-box > form { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .modal-foot .btn { flex: 1; justify-content: center; }
 
 /* Pagination */
@@ -406,4 +408,357 @@ table.items-tbl .c          { text-align: center; }
   .no-print { display: none !important; }
   body      { background: #fff; }
   .inv-paper { border: none; box-shadow: none; }
+}
+
+/* ── Mobile item cards + drawer ──────────────────────────────── */
+.mob-items-list  { display: none; margin-bottom: 6px; }
+.mob-item-card   { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--bdr); border-radius: var(--radius); margin-bottom: 8px; cursor: pointer; transition: background .12s; }
+.mob-item-card:hover,
+.mob-item-card:active { background: var(--s2); }
+.mob-item-info   { flex: 1; min-width: 0; }
+.mob-item-name   { font-size: 14px; font-weight: 500; color: var(--t1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mob-item-meta   { font-size: 12px; color: var(--t3); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mob-item-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.mob-item-total  { font-size: 14px; font-weight: 700; color: var(--t1); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mob-item-del    { width: 28px; height: 28px; border: none; background: none; color: var(--t4); cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: all .12s; flex-shrink: 0; line-height: 1; }
+.mob-item-del:hover { background: var(--err-bg); color: var(--err); }
+
+.item-drawer     { position: fixed; inset: 0; background: var(--surface); z-index: 700; display: flex; flex-direction: column; transform: translateX(100%); transition: transform .26s cubic-bezier(.4,0,.2,1); pointer-events: none; }
+.item-drawer.open { transform: translateX(0); pointer-events: auto; }
+.drawer-head     { padding: 14px 18px; border-bottom: 1px solid var(--bdr); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.drawer-title    { font-size: 16px; font-weight: 600; color: var(--t1); }
+.drawer-close    { background: none; border: none; font-size: 24px; color: var(--t4); cursor: pointer; padding: 0 4px; line-height: 1; transition: color .12s; }
+.drawer-close:hover { color: var(--t2); }
+.drawer-body     { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 18px; }
+.drawer-foot     { flex-shrink: 0; padding: 14px 18px; border-top: 1px solid var(--bdr); display: flex; gap: 10px; }
+.drawer-preview  { background: var(--s2); border: 1px solid var(--bdr); border-radius: var(--radius); padding: 14px 16px; margin-top: 4px; }
+.drawer-preview .dp-row  { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; }
+.drawer-preview .dp-row span:first-child { color: var(--t3); }
+.drawer-preview .dp-total { display: flex; justify-content: space-between; font-size: 16px; font-weight: 700; border-top: 1px solid var(--bdr); margin-top: 8px; padding-top: 8px; }
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE
+   Breakpoints: tablet ≤1024px  |  mobile ≤768px  |  small ≤480px
+═══════════════════════════════════════════════════════════════ */
+
+/* ── Mobile top bar — hidden on desktop ─────────────────────── */
+.mob-bar        { display: none; }
+.mob-placeholder{ width: 64px; }     /* balances the layout when no New btn */
+
+/* ── Sidebar backdrop — hidden by default ───────────────────── */
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(10,12,20,.58);
+  z-index: 590;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+.sidebar-backdrop.visible { display: block; }
+
+/* ══ TABLET  ≤1024px ════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+
+  /* Stat grid: 4 → 2 columns */
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* 4-col form rows → 2 columns */
+  .form-row-4 { grid-template-columns: 1fr 1fr; }
+}
+
+/* ══ MOBILE  ≤768px ════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* ── Base layout ─────────────────────────────────────────── */
+  body          { overflow-x: hidden; }
+  .app-shell    { flex-direction: column; }
+  .main         { height: auto; min-height: 0; overflow: visible; }
+
+  /* ── Sidebar → fixed overlay ────────────────────────────── */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 100vh;
+    z-index: 600;
+    width: 240px !important;           /* override collapsed 52px on mobile */
+    transform: translateX(-100%);
+    transition: transform .26s cubic-bezier(.4,0,.2,1);
+    overflow-y: auto;
+    box-shadow: none;
+  }
+  .sidebar.mob-open {
+    transform: translateX(0);
+    box-shadow: 4px 0 32px rgba(0,0,0,.35);
+  }
+
+  /* Restore all sidebar inner elements regardless of collapsed state */
+  .app-shell.sidebar-collapsed .sidebar-brand,
+  .app-shell.sidebar-collapsed .sidebar-new-btn,
+  .app-shell.sidebar-collapsed .nav-section,
+  .app-shell.sidebar-collapsed .user-info,
+  .app-shell.sidebar-collapsed .logout-label { display: revert !important; }
+  .app-shell.sidebar-collapsed .nav-label    { display: inline !important; }
+  .app-shell.sidebar-collapsed .sidebar-logo { padding: 16px 14px 14px !important; justify-content: space-between !important; }
+  .app-shell.sidebar-collapsed .nav-item     { justify-content: flex-start !important; padding: 10px 20px !important; }
+  .app-shell.sidebar-collapsed .user-panel   { justify-content: flex-start !important; padding: 8px 10px !important; }
+  .app-shell.sidebar-collapsed .logout-btn   { justify-content: flex-start !important; padding: 9px 10px !important; }
+
+  /* Hide the desktop sidebar toggle inside the sidebar on mobile */
+  .sidebar-toggle { display: none; }
+
+  /* ── Mobile top bar ─────────────────────────────────────── */
+  .mob-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    height: 54px;
+    background: var(--sidebar);
+    position: sticky;
+    top: 0;
+    z-index: 500;
+    flex-shrink: 0;
+  }
+  .mob-hamburger {
+    width: 36px; height: 36px;
+    background: none; border: none;
+    color: rgba(255,255,255,.72);
+    cursor: pointer;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s;
+    flex-shrink: 0;
+  }
+  .mob-hamburger:hover,
+  .mob-hamburger:active { background: rgba(255,255,255,.12); color: #fff; }
+  .mob-brand {
+    font-family: var(--font-head);
+    font-size: 19px;
+    color: #fff;
+    letter-spacing: .2px;
+  }
+  .mob-new-btn {
+    padding: 7px 13px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background .15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .mob-new-btn:hover { background: var(--accent-h); }
+
+  /* ── Page ───────────────────────────────────────────────── */
+  .page         { padding: 16px; }
+  .page-head    { margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+  .page-title   { font-size: 21px; }
+  .page-subtitle{ font-size: 13px; }
+
+  /* Flash messages — override inline padding */
+  .flash-wrap   { padding: 12px 16px 0 !important; }
+
+  /* ── Stat grid: 2×2 (override any inline grid-template-columns) ── */
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .stat-card    { padding: 16px 14px; }
+  .stat-value   { font-size: 20px; }
+
+  /* Dashboard quick-info row (3-col inline grid → 1-col) */
+  .quick-info-grid { grid-template-columns: 1fr !important; gap: 10px !important; }
+
+  /* ── Form grids → single column ─────────────────────────── */
+  .form-row-2,
+  .form-row-3,
+  .form-row-4   { grid-template-columns: 1fr; }
+
+  /* ── Cards ───────────────────────────────────────────────── */
+  .card-header  { padding: 14px 16px; flex-wrap: wrap; gap: 8px; }
+  .card-body    { padding: 16px; }
+
+  /* ── Toolbar / filters ───────────────────────────────────── */
+  .toolbar      { gap: 8px; }
+  .filter-pills {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+  .filter-pills::-webkit-scrollbar { display: none; }
+
+  /* ── Tables: horizontal scroll + first-col sticky ───────── */
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: var(--radius);
+  }
+  /* Sticky first column in list tables */
+  table.tbl th:first-child,
+  table.tbl td:first-child {
+    position: sticky;
+    left: 0;
+    background: var(--surface);
+    z-index: 1;
+  }
+  table.tbl th:first-child { background: var(--s2); }
+
+  /* Reduce cell padding on mobile */
+  table.tbl th  { padding: 10px 14px; font-size: 11px; }
+  table.tbl td  { padding: 12px 14px; font-size: 13px; }
+
+  /* ── Pagination ───────────────────────────────────────────── */
+  .pagination   { flex-wrap: wrap; gap: 4px; padding: 14px 0 2px; }
+  .pagination a,
+  .pagination span { padding: 5px 10px; font-size: 13px; }
+
+  /* ── Report tabs: horizontal scroll ─────────────────────── */
+  .rpt-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    width: 100%;
+    scrollbar-width: none;
+  }
+  .rpt-tabs::-webkit-scrollbar { display: none; }
+  .rpt-tab { flex-shrink: 0; padding: 8px 14px; }
+
+  /* ── Modals: full-screen below mob-bar ───────────────────── */
+  .modal-overlay {
+    align-items: stretch;
+    padding: 0;
+    padding-top: 54px;        /* clear the sticky mob-bar */
+  }
+  .modal-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    height: 100%;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  /* form sits between modal-box and modal-body — must fill remaining height */
+  .modal-box > form {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .modal-head { flex-shrink: 0; }
+  .modal-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .modal-foot {
+    flex-shrink: 0;
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
+  }
+
+  /* ── Buttons ─────────────────────────────────────────────── */
+  .btn    { font-size: 13px; }
+  .btn-sm { padding: 6px 11px; font-size: 12px; }
+
+  /* ── Invoice builder ─────────────────────────────────────── */
+  .inv-builder-wrap { flex-direction: column !important; padding: 12px !important; gap: 0 !important; }
+
+  /* inv-band: stack company info + invoice meta */
+  .inv-band { grid-template-columns: 1fr !important; padding: 20px 18px 16px !important; }
+  .inv-meta { text-align: left !important; margin-top: 14px !important; }
+  .inv-num-input { width: 100% !important; text-align: left !important; font-size: 18px !important; }
+  .inv-date-row { justify-content: flex-start !important; flex-wrap: wrap !important; gap: 10px !important; }
+  .inv-date-block .dl { text-align: left !important; }
+
+  /* inv-parties: single column */
+  .inv-parties { grid-template-columns: 1fr !important; padding: 16px 18px !important; gap: 14px !important; }
+
+  /* inv-items: swap table for card list */
+  .inv-items { padding: 0 14px !important; }
+  .col-chips { display: none !important; }
+  .inv-items .table-wrap { display: none !important; }
+  .mob-items-list { display: block !important; }
+
+  /* inv-footer: single column, totals on top */
+  .inv-footer { grid-template-columns: 1fr !important; padding: 14px 18px !important; gap: 14px !important; }
+  .inv-footer > .totals-block { order: -1 !important; }
+
+  /* inv-actions: fixed bottom action bar */
+  .inv-actions {
+    position: fixed !important;
+    bottom: 0 !important; left: 0 !important; right: 0 !important; top: auto !important;
+    width: auto !important;
+    background: var(--surface) !important;
+    border-top: 1px solid var(--bdr) !important;
+    border-radius: 0 !important;
+    z-index: 400 !important;
+    flex-direction: row !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    align-self: auto !important;
+    box-shadow: 0 -2px 12px rgba(0,0,0,.08) !important;
+  }
+  .inv-actions > .act-card:nth-child(1),
+  .inv-actions > .act-card:nth-child(3) { display: none !important; }
+  .inv-actions > .act-card:nth-child(2) {
+    padding: 8px 12px !important;
+    background: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    width: 100% !important;
+    margin-bottom: 0 !important;
+  }
+  .inv-actions > .act-card:nth-child(2) .act-card-title { display: none !important; }
+  .inv-actions .act-list {
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+    gap: 6px !important;
+    padding-bottom: max(0px, env(safe-area-inset-bottom)) !important;
+  }
+  .inv-actions .act-list::-webkit-scrollbar { display: none !important; }
+  .inv-actions .act-btn {
+    white-space: nowrap !important;
+    font-size: 12px !important;
+    padding: 8px 12px !important;
+    flex-shrink: 0 !important;
+    width: auto !important;      /* override desktop width:100% */
+  }
+  .inv-actions .act-list > form { flex-shrink: 0 !important; }
+  .inv-actions .act-list > form .act-btn { width: auto !important; }
+
+  /* Left column: bottom padding to clear fixed action bar */
+  .inv-left-col { padding-bottom: 72px !important; }
+
+  /* Item drawer offset below mob-bar */
+  .item-drawer { top: 54px !important; }
+  .drawer-body .form-row { grid-template-columns: 1fr 1fr !important; }
+  .drawer-foot { padding-bottom: max(14px, env(safe-area-inset-bottom)) !important; }
+}
+
+/* ══ SMALL PHONE  ≤480px ════════════════════════════════════════ */
+@media (max-width: 480px) {
+
+  .page         { padding: 12px; }
+  .stat-card    { padding: 14px 12px; }
+  .stat-value   { font-size: 18px; }
+  .stat-label   { font-size: 11px; }
+  .page-title   { font-size: 19px; }
+
+  /* 4-col form rows stay 2-col even on small phones */
+  .form-row-4   { grid-template-columns: 1fr 1fr; }
+
+  table.tbl th  { padding: 9px 12px; }
+  table.tbl td  { padding: 10px 12px; }
+
+  .mob-brand    { font-size: 17px; }
 }

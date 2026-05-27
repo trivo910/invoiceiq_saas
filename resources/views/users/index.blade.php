@@ -200,7 +200,7 @@ function openE(u) {
     document.getElementById('uModal').style.display = 'flex';
     document.getElementById('mTitle').textContent = 'Edit User';
     document.getElementById('mSubmit').textContent = 'Save Changes';
-    document.getElementById('uForm').action = '/users/' + u.id;
+    document.getElementById('uForm').action = '{{ url('users') }}/' + u.id;
     document.getElementById('fMethod').value = 'PUT';
     document.getElementById('pwdHint').style.display = 'block';
     document.getElementById('pwdLabel').textContent = 'New Password';

@@ -349,7 +349,7 @@ function openE(c) {
     clearCErrors();
     document.getElementById('cModal').style.display = 'flex';
     document.getElementById('mTitle').textContent = 'Edit Customer';
-    document.getElementById('cForm').action = '/customers/' + c.id;
+    document.getElementById('cForm').action = '{{ url('customers') }}/' + c.id;
     document.getElementById('fM').value = 'PUT';
     const m = { name:'fn', gstin:'fg', phone:'fp', email:'fe', billing_address:'fa', billing_city:'fc', billing_state_code:'fsc', billing_pincode:'fpin', payment_terms:'ft' };
     Object.entries(m).forEach(([k, id]) => {
