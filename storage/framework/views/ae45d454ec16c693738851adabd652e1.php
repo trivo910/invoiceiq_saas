@@ -55,6 +55,24 @@
         }
         .logout-btn:hover { background: rgba(255,255,255,.06); color: rgba(255,255,255,.65); }
         .logout-btn svg { flex-shrink: 0; }
+
+        /* ── Flash messages ────────────────────────── */
+        .flash { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .flash-close {
+            flex-shrink: 0;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            line-height: 1;
+            padding: 0 2px;
+            opacity: .5;
+            color: inherit;
+            font-family: var(--font);
+        }
+        .flash-close:hover { opacity: 1; }
+        .flash-wrap { transition: opacity .35s; }
+        .flash-wrap.hiding { opacity: 0; }
     </style>
     <?php echo $__env->yieldPushContent('styles'); ?>
 </head>
@@ -180,18 +198,27 @@
     
     <main class="main">
         <?php if(session('success')): ?>
-            <div style="padding:0 28px;padding-top:16px;">
-                <div class="flash flash-success"><?php echo e(session('success')); ?></div>
+            <div style="padding:0 28px;padding-top:16px;" class="flash-wrap">
+                <div class="flash flash-success">
+                    <span><?php echo e(session('success')); ?></span>
+                    <button type="button" class="flash-close" onclick="dismissFlash(this)" aria-label="Dismiss">×</button>
+                </div>
             </div>
         <?php endif; ?>
         <?php if(session('error')): ?>
-            <div style="padding:0 28px;padding-top:16px;">
-                <div class="flash flash-error"><?php echo e(session('error')); ?></div>
+            <div style="padding:0 28px;padding-top:16px;" class="flash-wrap">
+                <div class="flash flash-error">
+                    <span><?php echo e(session('error')); ?></span>
+                    <button type="button" class="flash-close" onclick="dismissFlash(this)" aria-label="Dismiss">×</button>
+                </div>
             </div>
         <?php endif; ?>
         <?php if(session('warning')): ?>
-            <div style="padding:0 28px;padding-top:16px;">
-                <div class="flash flash-warning"><?php echo e(session('warning')); ?></div>
+            <div style="padding:0 28px;padding-top:16px;" class="flash-wrap">
+                <div class="flash flash-warning">
+                    <span><?php echo e(session('warning')); ?></span>
+                    <button type="button" class="flash-close" onclick="dismissFlash(this)" aria-label="Dismiss">×</button>
+                </div>
             </div>
         <?php endif; ?>
 
@@ -202,6 +229,22 @@
 <?php echo $__env->yieldPushContent('scripts'); ?>
 <script>
 (function () {
+    /* ── Flash dismiss ── */
+    window.dismissFlash = function (btn) {
+        const wrap = btn.closest('.flash-wrap');
+        wrap.classList.add('hiding');
+        wrap.addEventListener('transitionend', function () { wrap.remove(); }, { once: true });
+    };
+
+    // success → 4 s, warning → 6 s, error → stays until closed
+    document.querySelectorAll('.flash-wrap').forEach(function (wrap) {
+        if (wrap.querySelector('.flash-error')) return;
+        var delay = wrap.querySelector('.flash-warning') ? 6000 : 4000;
+        setTimeout(function () {
+            if (wrap.isConnected) dismissFlash(wrap.querySelector('.flash-close'));
+        }, delay);
+    });
+
     const STORAGE_KEY = 'sidebarCollapsed';
     const shell   = document.querySelector('.app-shell');
     const sidebar = document.querySelector('.sidebar');

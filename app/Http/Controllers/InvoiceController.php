@@ -94,7 +94,7 @@ class InvoiceController extends Controller
 
     public function edit(Invoice $invoice)
     {
-        $invoice->load('items');
+        $invoice->load('items', 'payments');
         $settings  = \App\Models\Setting::all_settings();
         $customers = Customer::active()->orderBy('name')->get();
         return view('invoices.form', compact('invoice', 'settings', 'customers'));

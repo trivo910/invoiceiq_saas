@@ -308,6 +308,34 @@ body { font-family: 'DejaVu Sans', sans-serif; font-size: 10px; color: #1a1a1a; 
             {{ fmt_inr($invoice->grand_total) }}
           </td>
         </tr>
+
+        @if($invoice->payments->count() > 0)
+        {{-- Payment rows --}}
+        @foreach($invoice->payments as $pmt)
+        <tr>
+          <td style="padding:3px 6px; font-size:11px; color:#555;">
+            Payment ({{ strtoupper($pmt->mode) }}
+            @if($pmt->reference) · {{ $pmt->reference }}@endif
+            · {{ $pmt->payment_date->format('d M Y') }})
+          </td>
+          <td align="right" style="padding:3px 6px; font-size:11px; color:#0c7a59; font-variant-numeric:tabular-nums;">
+            -{{ fmt_inr($pmt->amount) }}
+          </td>
+        </tr>
+        @endforeach
+        @if($invoice->balance_due > 0)
+        {{-- Balance Due --}}
+        <tr style="border-top:1px solid #dde0e8;">
+          <td style="padding:6px 6px 3px; font-size:13px; font-weight:700; color:#d62b2b;">
+            Balance Due
+          </td>
+          <td align="right" style="padding:6px 6px 3px; font-size:13px; font-weight:700;
+                                   color:#d62b2b; font-variant-numeric:tabular-nums;">
+            {{ fmt_inr($invoice->balance_due) }}
+          </td>
+        </tr>
+        @endif
+        @endif
       </table>
     </td>
 

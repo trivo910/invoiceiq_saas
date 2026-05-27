@@ -354,19 +354,20 @@ table.items-tbl .c          { text-align: center; }
 .summary-row.grand .sv { color: var(--accent); }
 
 /* Modal overlay */
-.modal-overlay { position: fixed; inset: 0; background: rgba(10,12,20,.55); display: flex; align-items: center; justify-content: center; z-index: 900; }
-.modal-box     { background: var(--surface); 
-                border-radius: var(--radius-lg); 
-                width: 500px; 
-                max-width: 95vw; 
-                /* max-height: 90vh;  */
-                overflow-y: auto; box-shadow: 0 24px 80px rgba(0,0,0,.22); border: 1px solid var(--bdr); }
+.modal-overlay { position: fixed; inset: 0; background: rgba(10,12,20,.55); display: flex; align-items: center; justify-content: center; z-index: 900; padding: 16px; }
+.modal-box     { background: var(--surface);
+                border-radius: var(--radius-lg);
+                width: 500px;
+                max-width: 100%;
+                max-height: 92vh;
+                display: flex; flex-direction: column;
+                box-shadow: 0 24px 80px rgba(0,0,0,.22); border: 1px solid var(--bdr); }
 .modal-box.modal-sm { width: 400px; }
-.modal-head    { padding: 20px 26px; border-bottom: 1px solid var(--bdr); display: flex; justify-content: space-between; align-items: center; }
-.modal-title   { font-size: 17px; font-weight: 600; color: var(--t1); }
-.modal-close   { background: none; border: none; cursor: pointer; font-size: 24px; color: var(--t4); line-height: 1; padding: 0 4px; }
-.modal-body    { padding: 28px; }
-.modal-foot    { padding: 0 28px 24px; display: flex; gap: 10px; }
+.modal-head    { padding: 18px 22px; border-bottom: 1px solid var(--bdr); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+.modal-title   { font-size: 16px; font-weight: 600; color: var(--t1); }
+.modal-close   { background: none; border: none; cursor: pointer; font-size: 22px; color: var(--t4); line-height: 1; padding: 0 4px; }
+.modal-body    { padding: 20px 22px; overflow-y: auto; flex: 1; min-height: 0; }
+.modal-foot    { padding: 14px 22px; border-top: 1px solid var(--bdr); display: flex; gap: 10px; flex-shrink: 0; }
 .modal-foot .btn { flex: 1; justify-content: center; }
 
 /* Pagination */

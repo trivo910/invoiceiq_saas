@@ -1019,3 +1019,53 @@ Did you mean one of these?
 #51 D:/xampp/htdocs/invoiceiq/vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php(23): require_once('D://xampp//htdocs...')
 #52 {main}
 "} 
+[2026-05-27 08:32:38] local.ERROR: Uncaught ErrorException: Undefined variable $errors in D:\xampp\htdocs\invoiceiq\storage\framework\views\89a127590c376d547bcca43311dd5917.php:17
+Stack trace:
+#0 D:\xampp\htdocs\invoiceiq\vendor\laravel\framework\src\Illuminate\Foundation\Bootstrap\HandleExceptions.php(258): Illuminate\Foundation\Bootstrap\HandleExceptions->handleError(2, 'Undefined varia...', 'D:\\xampp\\htdocs...', 17)
+#1 D:\xampp\htdocs\invoiceiq\storage\framework\views\89a127590c376d547bcca43311dd5917.php(17): Illuminate\Foundation\Bootstrap\HandleExceptions->Illuminate\Foundation\Bootstrap\{closure}(2, 'Undefined varia...', 'D:\\xampp\\htdocs...', 17)
+#2 D:\xampp\htdocs\invoiceiq\vendor\laravel\framework\src\Illuminate\Filesystem\Filesystem.php(123): require('D:\\xampp\\htdocs...')
+#3 D:\xampp\htdocs\invoiceiq\vendor\laravel\framework\src\Illuminate\Filesystem\Filesystem.php(124): Illuminate\Filesystem\Filesystem::Illuminate\Filesystem\{closure}()
+#4 D:\xampp\htdocs\invoiceiq\vendor\laravel\framework\src\Illuminate\View\Engines\PhpEngine.php(58): Illuminate\Filesystem\Filesystem->getRequire('D:\\xampp\\htdocs...', Array)
+#5 D:\xampp\htdocs\invoiceiq\vendor\laravel\framework\src\Illuminate\View\Engines\CompilerEngine.php(75): Illuminate\View\Engines\PhpEngine->evaluatePath('D:\\xampp\\htdocs...', Array)
+#6 D:\xampp\htdocs\invoiceiq\vendor\laravel\framework\src\Illuminate\View\View.php(209): Illuminate\View\Engines\CompilerEngine->get('D:\\xampp\\htdocs...', Array)
+#7 D:\xampp\htdocs\invoiceiq\vendor\laravel\framework\src\Illuminate\View\View.php(192): Illuminate\View\View->getContents()
+#8 D:\xampp\htdocs\invoiceiq\vendor\laravel\framework\src\Illuminate\View\View.php(161): Illuminate\View\View->renderContents()
+#9 Command line code(12): Illuminate\View\View->render()
+#10 {main}
+
+Next Illuminate\View\ViewException: Undefined variable $errors (View: D:\xampp\htdocs\invoiceiq\resources\views\invoices\form.blade.php) in D:\xampp\htdocs\invoiceiq\storage\framework\views\89a127590c376d547bcca43311dd5917.php:17
+Stack trace:
+#0 D:\xampp\htdocs\invoiceiq\vendor\laravel\framework\src\Illuminate\View\Engines\PhpEngine.php(60): Illuminate\View\Engines\CompilerEngine->handleViewException(Object(ErrorException), 0)
+#1 D:\xampp\htdocs\invoiceiq\vendor\laravel\framework\src\Illuminate\View\Engines\CompilerEngine.php(75): Illuminate\View\Engines\PhpEngine->evaluatePath('D:\\xampp\\htdocs...', Array)
+#2 D:\xampp\htdocs\invoiceiq\vendor\laravel\framework\src\Illuminate\View\View.php(209): Illuminate\View\Engines\CompilerEngine->get('D:\\xampp\\htdocs...', Array)
+#3 D:\xampp\htdocs\invoiceiq\vendor\laravel\framework\src\Illuminate\View\View.php(192): Illuminate\View\View->getContents()
+#4 D:\xampp\htdocs\invoiceiq\vendor\laravel\framework\src\Illuminate\View\View.php(161): Illuminate\View\View->renderContents()
+#5 Command line code(12): Illuminate\View\View->render()
+#6 {main}
+  thrown {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Uncaught ErrorException: Undefined variable $errors in D:\\xampp\\htdocs\\invoiceiq\\storage\\framework\\views\\89a127590c376d547bcca43311dd5917.php:17
+Stack trace:
+#0 D:\\xampp\\htdocs\\invoiceiq\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Bootstrap\\HandleExceptions.php(258): Illuminate\\Foundation\\Bootstrap\\HandleExceptions->handleError(2, 'Undefined varia...', 'D:\\\\xampp\\\\htdocs...', 17)
+#1 D:\\xampp\\htdocs\\invoiceiq\\storage\\framework\\views\\89a127590c376d547bcca43311dd5917.php(17): Illuminate\\Foundation\\Bootstrap\\HandleExceptions->Illuminate\\Foundation\\Bootstrap\\{closure}(2, 'Undefined varia...', 'D:\\\\xampp\\\\htdocs...', 17)
+#2 D:\\xampp\\htdocs\\invoiceiq\\vendor\\laravel\\framework\\src\\Illuminate\\Filesystem\\Filesystem.php(123): require('D:\\\\xampp\\\\htdocs...')
+#3 D:\\xampp\\htdocs\\invoiceiq\\vendor\\laravel\\framework\\src\\Illuminate\\Filesystem\\Filesystem.php(124): Illuminate\\Filesystem\\Filesystem::Illuminate\\Filesystem\\{closure}()
+#4 D:\\xampp\\htdocs\\invoiceiq\\vendor\\laravel\\framework\\src\\Illuminate\\View\\Engines\\PhpEngine.php(58): Illuminate\\Filesystem\\Filesystem->getRequire('D:\\\\xampp\\\\htdocs...', Array)
+#5 D:\\xampp\\htdocs\\invoiceiq\\vendor\\laravel\\framework\\src\\Illuminate\\View\\Engines\\CompilerEngine.php(75): Illuminate\\View\\Engines\\PhpEngine->evaluatePath('D:\\\\xampp\\\\htdocs...', Array)
+#6 D:\\xampp\\htdocs\\invoiceiq\\vendor\\laravel\\framework\\src\\Illuminate\\View\\View.php(209): Illuminate\\View\\Engines\\CompilerEngine->get('D:\\\\xampp\\\\htdocs...', Array)
+#7 D:\\xampp\\htdocs\\invoiceiq\\vendor\\laravel\\framework\\src\\Illuminate\\View\\View.php(192): Illuminate\\View\\View->getContents()
+#8 D:\\xampp\\htdocs\\invoiceiq\\vendor\\laravel\\framework\\src\\Illuminate\\View\\View.php(161): Illuminate\\View\\View->renderContents()
+#9 Command line code(12): Illuminate\\View\\View->render()
+#10 {main}
+
+Next Illuminate\\View\\ViewException: Undefined variable $errors (View: D:\\xampp\\htdocs\\invoiceiq\\resources\\views\\invoices\\form.blade.php) in D:\\xampp\\htdocs\\invoiceiq\\storage\\framework\\views\\89a127590c376d547bcca43311dd5917.php:17
+Stack trace:
+#0 D:\\xampp\\htdocs\\invoiceiq\\vendor\\laravel\\framework\\src\\Illuminate\\View\\Engines\\PhpEngine.php(60): Illuminate\\View\\Engines\\CompilerEngine->handleViewException(Object(ErrorException), 0)
+#1 D:\\xampp\\htdocs\\invoiceiq\\vendor\\laravel\\framework\\src\\Illuminate\\View\\Engines\\CompilerEngine.php(75): Illuminate\\View\\Engines\\PhpEngine->evaluatePath('D:\\\\xampp\\\\htdocs...', Array)
+#2 D:\\xampp\\htdocs\\invoiceiq\\vendor\\laravel\\framework\\src\\Illuminate\\View\\View.php(209): Illuminate\\View\\Engines\\CompilerEngine->get('D:\\\\xampp\\\\htdocs...', Array)
+#3 D:\\xampp\\htdocs\\invoiceiq\\vendor\\laravel\\framework\\src\\Illuminate\\View\\View.php(192): Illuminate\\View\\View->getContents()
+#4 D:\\xampp\\htdocs\\invoiceiq\\vendor\\laravel\\framework\\src\\Illuminate\\View\\View.php(161): Illuminate\\View\\View->renderContents()
+#5 Command line code(12): Illuminate\\View\\View->render()
+#6 {main}
+  thrown at D:/xampp/htdocs/invoiceiq/storage/framework/views/89a127590c376d547bcca43311dd5917.php:17)
+[stacktrace]
+#0 {main}
+"} 

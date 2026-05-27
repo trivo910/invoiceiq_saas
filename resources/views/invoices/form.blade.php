@@ -246,6 +246,42 @@
                 <span class="tv" id="t_grand">₹0.00</span>
             </div>
             <div class="amount-words" id="t_words">Zero Rupees Only</div>
+
+            @if($isEdit && $invoice->payments->count() > 0)
+            <div style="margin-top:14px;border-top:1px solid var(--bdr);padding-top:12px;">
+                <div class="form-label" style="margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;font-size:11px;">Payment History</div>
+                <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                    <thead>
+                        <tr style="background:var(--s2);">
+                            <th style="padding:5px 8px;text-align:left;font-weight:600;color:var(--t2);">Date</th>
+                            <th style="padding:5px 8px;text-align:left;font-weight:600;color:var(--t2);">Mode</th>
+                            <th style="padding:5px 8px;text-align:left;font-weight:600;color:var(--t2);">Reference</th>
+                            <th style="padding:5px 8px;text-align:right;font-weight:600;color:var(--t2);">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($invoice->payments as $pmt)
+                        <tr style="border-bottom:1px solid var(--bdr);">
+                            <td style="padding:5px 8px;">{{ $pmt->payment_date->format('d M Y') }}</td>
+                            <td style="padding:5px 8px;text-transform:uppercase;">{{ $pmt->mode }}</td>
+                            <td style="padding:5px 8px;color:var(--t2);">{{ $pmt->reference ?: '—' }}</td>
+                            <td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;">{{ fmt_inr($pmt->amount) }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+                <div class="total-row" style="margin-top:6px;">
+                    <span class="tl" style="color:var(--t2);">Amount Paid</span>
+                    <span class="tv" style="color:var(--ok);">{{ fmt_inr($invoice->amount_paid) }}</span>
+                </div>
+                @if($invoice->balance_due > 0)
+                <div class="total-row" style="border-top:1px solid var(--bdr);margin-top:4px;padding-top:6px;">
+                    <span class="tl" style="font-weight:700;">Balance Due</span>
+                    <span class="tv" style="color:var(--err);font-weight:700;">{{ fmt_inr($invoice->balance_due) }}</span>
+                </div>
+                @endif
+            </div>
+            @endif
         </div>
     </div>
 
@@ -362,26 +398,28 @@
             <button type="button" class="modal-close" onclick="closeEmailModal()">×</button>
         </div>
         <div class="modal-body">
-            <div class="form-group">
-                <label class="form-label">To <span class="req">*</span></label>
-                <input type="email" id="em_to" class="form-control" placeholder="customer@example.com"
-                       oninput="this.style.borderColor=''">
-                <div id="em_to_err" style="font-size:12px;color:var(--err);margin-top:3px;display:none;">Valid email required.</div>
-            </div>
-            <div class="form-group">
-                <label class="form-label">CC <span style="font-size:11px;color:var(--t4);font-weight:400;">(optional)</span></label>
-                <input type="email" id="em_cc" class="form-control" placeholder="cc@example.com">
+            <div class="form-row form-row-2">
+                <div class="form-group">
+                    <label class="form-label">To <span class="req">*</span></label>
+                    <input type="email" id="em_to" class="form-control" placeholder="customer@example.com"
+                           oninput="this.style.borderColor=''">
+                    <div id="em_to_err" style="font-size:12px;color:var(--err);margin-top:3px;display:none;">Valid email required.</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">CC <span style="font-size:11px;color:var(--t4);font-weight:400;">(optional)</span></label>
+                    <input type="email" id="em_cc" class="form-control" placeholder="cc@example.com">
+                </div>
             </div>
             <div class="form-group">
                 <label class="form-label">Subject <span class="req">*</span></label>
                 <input type="text" id="em_subject" class="form-control">
             </div>
-            <div class="form-group" style="margin-bottom:0;">
+            <div class="form-group">
                 <label class="form-label">Message</label>
                 <div id="emailBodyEditor"></div>
             </div>
-            <div style="margin-top:10px;padding:8px 10px;background:var(--s2);border-radius:var(--radius);font-size:11px;color:var(--t4);">
-                The invoice PDF will be attached as a compressed ZIP file.
+            <div style="padding:7px 10px;background:var(--s2);border-radius:var(--radius);font-size:11px;color:var(--t4);">
+                📎 Invoice PDF will be attached as a ZIP file.
             </div>
         </div>
         <div class="modal-foot">
@@ -564,7 +602,7 @@
 <link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
 <style>
 .hidden-col { display: none !important; }
-#emailBodyEditor .ql-editor { min-height:160px; font-size:13px; font-family:var(--font); line-height:1.6; }
+#emailBodyEditor .ql-editor { min-height:120px; max-height:220px; overflow-y:auto; font-size:13px; font-family:var(--font); line-height:1.6; }
 #emailBodyEditor .ql-toolbar.ql-snow { border-radius:var(--radius) var(--radius) 0 0; border-color:var(--bdr2); background:var(--s2); }
 #emailBodyEditor .ql-container.ql-snow { border-color:var(--bdr2); border-radius:0 0 var(--radius) var(--radius); }
 #emailBodyEditor .ql-toolbar.ql-snow button,
@@ -572,6 +610,9 @@
 #emailBodyEditor .ql-toolbar.ql-snow button:hover,
 #emailBodyEditor .ql-toolbar.ql-snow .ql-picker-label:hover,
 #emailBodyEditor .ql-toolbar.ql-snow button.ql-active { color:var(--accent); }
+/* Tighter form-group spacing inside email modal */
+#emailModal .form-group { margin-bottom:12px; }
+#emailModal .form-group:last-child { margin-bottom:0; }
 </style>
 @endpush
 
