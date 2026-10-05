@@ -71,7 +71,12 @@ class SettingsController extends Controller
             Storage::disk('public')->delete($existing);
         }
 
-        $ext  = $request->file('company_logo')->getClientOriginalExtension();
+        // Derive extension from actual MIME type, not the client-supplied filename
+        $ext  = match ($request->file('company_logo')->getMimeType()) {
+            'image/png' => 'png',
+            'image/gif' => 'gif',
+            default     => 'jpg',
+        };
         $path = $request->file('company_logo')->storeAs('logos', 'company_logo.' . $ext, 'public');
         Setting::set('company_logo', $path);
 

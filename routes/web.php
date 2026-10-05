@@ -13,7 +13,9 @@ use Illuminate\Support\Facades\Route;
 // ── Guest-only (redirects authenticated users to /) ────────────
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'create'])->name('login');
-    Route::post('/login', [LoginController::class, 'store'])->name('login.post');
+    Route::post('/login', [LoginController::class, 'store'])
+        ->middleware('throttle:5,1')   // 5 attempts per minute per IP
+        ->name('login.post');
 });
 
 Route::post('/logout', [LoginController::class, 'destroy'])

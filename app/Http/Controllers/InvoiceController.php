@@ -172,6 +172,9 @@ class InvoiceController extends Controller
             'email_body'    => 'required|string',
         ]);
 
+        // Strip CR/LF to prevent email header injection via subject
+        $data['email_subject'] = str_replace(["\r", "\n"], ' ', $data['email_subject']);
+
         $settings = \App\Models\Setting::all_settings();
 
         if (($settings['email_enabled'] ?? '0') !== '1') {
@@ -217,11 +220,13 @@ class InvoiceController extends Controller
                 ->with('warning', 'Invoice saved. No recipient email address provided.');
         }
 
+        $rawSubject = $request->input('email_subject', "Invoice {$invoice->number}");
+
         try {
             $this->dispatchMail($invoice, [
                 'to_email'      => $to,
                 'cc_email'      => $request->input('cc_email'),
-                'email_subject' => $request->input('email_subject', "Invoice {$invoice->number}"),
+                'email_subject' => str_replace(["\r", "\n"], ' ', $rawSubject),
                 'email_body'    => $request->input('email_body', ''),
             ], $settings);
             return redirect()->route('invoices.index')
