@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
                 'name'     => 'Admin',
                 'password' => Hash::make('password'),
                 'role'     => 'admin',
+                'email_verified_at' => now(),
             ]
         );
         $admin->tenants()->syncWithoutDetaching([$tenant->id => ['role' => 'owner']]);

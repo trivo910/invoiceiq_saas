@@ -21,3 +21,13 @@ Migrations run: all three Phase 1 migrations completed successfully on local MyS
 ### Phase 1 follow-up — tenant middleware runtime fix
 
 Changed `ResolveTenant` to receive `TenantContext` through its constructor; Laravel's middleware pipeline invokes `handle()` with only the request and next callback, so method-parameter injection caused the reported `ArgumentCountError`. PHP syntax validation passes, and an authenticated request to the local dashboard returned HTTP 200 after the fix.
+
+## Phase 2 — Auth and onboarding
+
+Added atomic user/workspace registration, signed email verification, password reset broker flows, session regeneration, and company/GST/logo/invoice prefix onboarding with optional initial customer/item. Added tenant-scoped invitations with SHA-256 token hashes and seven-day expiry, membership role changes/removal, and Gates for workspace and record access. Existing accounts were marked verified and existing workspaces onboarded to preserve their current access.
+
+Added auth, verification, onboarding, and invitation controllers/views, `TenantInvitation`, onboarding middleware, mail config, and `2026_10_23_000004_add_phase_two_auth_and_invitations.php`. Modified auth/team routes and views, tenant role resolution, `ResolveTenant`, `.env.example`, README, and affected docs. Migration 4 applied to configured local MySQL. PHP syntax checks and route listing succeeded; automated tests were not run because they were not requested and the project has no tests directory. Production email requires SMTP configuration; the default local mailer logs messages.
+
+### Phase 2 follow-up — local mail transport unavailable
+
+Registration reported an SMTP connection error because local `.env` selected `smtp` at `127.0.0.1:1025` without a server running. Mail transport failures now return actionable feedback for verification, reset, and invitation flows rather than a 500. The local `.env` mailer was switched to `log` and Laravel's config cache cleared; existing SMTP host/credential entries were left untouched. The account submitted before this fix may already exist and can sign in, then resend verification from the verification screen.

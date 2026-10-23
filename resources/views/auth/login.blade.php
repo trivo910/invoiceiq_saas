@@ -156,6 +156,7 @@
                         Sign In
                     </button>
                 </form>
+                <p style="margin-top:14px;font-size:12px;"><a href="{{ route('password.request') }}">Forgot password?</a> · <a href="{{ route('register') }}">Create a workspace</a></p>
 
             </div>
         </div>

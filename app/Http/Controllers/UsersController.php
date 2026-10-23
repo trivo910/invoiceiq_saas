@@ -2,73 +2,59 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
+use App\Models\TenantInvitation;
+use App\Support\TenantContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Log;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 class UsersController extends Controller
 {
     public function index(): View
     {
-        $users = User::orderBy('name')->get();
-
-        $stats = [
-            'total'  => $users->count(),
-            'admin'  => $users->where('role', 'admin')->count(),
-            'staff'  => $users->where('role', 'staff')->count(),
-            'viewer' => $users->where('role', 'viewer')->count(),
-        ];
-
-        return view('users.index', compact('users', 'stats'));
+        $tenant = app(TenantContext::class)->tenant();
+        return view('users.index', ['users' => $tenant->users()->orderBy('name')->get(), 'invitations' => TenantInvitation::where('tenant_id', $tenant->id)->whereNull('accepted_at')->where('expires_at', '>', now())->latest()->get()]);
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $data = $request->validate([
-            'name'                  => ['required', 'string', 'max:255'],
-            'email'                 => ['required', 'email', 'unique:users,email'],
-            'password'              => ['required', 'string', 'min:8', 'confirmed'],
-            'role'                  => ['required', 'in:admin,staff,viewer'],
-        ]);
-
-        User::create($data);
-
-        return redirect()->route('users.index')->with('success', 'User created successfully.');
+        $data = $request->validate(['email' => ['required', 'email', 'max:255'], 'role' => ['required', 'in:admin,accountant,staff,viewer']]);
+        $tenant = app(TenantContext::class)->tenant();
+        if ($tenant->users()->where('email', $data['email'])->exists()) return back()->withErrors(['email' => 'This person is already a workspace member.']);
+        $plainToken = Str::random(64);
+        $invite = TenantInvitation::updateOrCreate(['tenant_id' => $tenant->id, 'email' => $data['email']], ['invited_by' => $request->user()->id, 'role' => $data['role'], 'token_hash' => hash('sha256', $plainToken), 'expires_at' => now()->addDays(7), 'accepted_at' => null]);
+        $url = route('invitations.accept', $plainToken);
+        try {
+            Mail::raw("You have been invited to join {$tenant->name} on InvoiceIQ. Accept your invitation within 7 days: {$url}", fn ($message) => $message->to($invite->email)->subject("Invitation to {$tenant->name}"));
+        } catch (TransportExceptionInterface $exception) {
+            Log::warning('Workspace invitation email could not be sent.', ['invitation_id' => $invite->id, 'exception' => $exception::class]);
+            return redirect()->route('users.index')->with('error', 'Invitation saved, but email delivery failed. Configure SMTP or the local log mailer, then resend.');
+        }
+        return redirect()->route('users.index')->with('success', 'Invitation sent.');
     }
 
-    public function update(Request $request, User $user): RedirectResponse
+    public function destroy(int $user): RedirectResponse
     {
-        $data = $request->validate([
-            'name'                  => ['required', 'string', 'max:255'],
-            'email'                 => ['required', 'email', "unique:users,email,{$user->id}"],
-            'password'              => ['nullable', 'string', 'min:8', 'confirmed'],
-            'role'                  => ['required', 'in:admin,staff,viewer'],
-        ]);
-
-        if (empty($data['password'])) {
-            unset($data['password']);
-        }
-
-        // Prevent an admin from changing their own role (avoid accidental lockout)
-        if ($user->id === auth()->id()) {
-            unset($data['role']);
-        }
-
-        $user->update($data);
-
-        return redirect()->route('users.index')->with('success', 'User updated successfully.');
+        $tenant = app(TenantContext::class)->tenant();
+        abort_if($user === auth()->id(), 422, 'You cannot remove your own account.');
+        abort_unless($tenant->users()->whereKey($user)->exists(), 404);
+        abort_if($tenant->users()->wherePivot('role', 'owner')->count() <= 1 && $tenant->users()->whereKey($user)->wherePivot('role', 'owner')->exists(), 422, 'The workspace must keep an owner.');
+        $tenant->users()->detach($user);
+        return redirect()->route('users.index')->with('success', 'Member removed from this workspace.');
     }
 
-    public function destroy(User $user): RedirectResponse
+    public function updateRole(Request $request, int $user): RedirectResponse
     {
-        if ($user->id === auth()->id()) {
-            return redirect()->route('users.index')
-                ->with('error', 'You cannot delete your own account.');
-        }
-
-        $user->delete();
-
-        return redirect()->route('users.index')->with('success', 'User deleted.');
+        $data = $request->validate(['role' => ['required', 'in:admin,accountant,staff,viewer']]);
+        $tenant = app(TenantContext::class)->tenant();
+        abort_unless($tenant->users()->whereKey($user)->exists(), 404);
+        abort_if($user === auth()->id() || $tenant->users()->whereKey($user)->wherePivot('role', 'owner')->exists(), 422, 'Owner role cannot be changed here.');
+        $tenant->users()->updateExistingPivot($user, ['role' => $data['role']]);
+        return redirect()->route('users.index')->with('success', 'Workspace role updated.');
     }
+
 }

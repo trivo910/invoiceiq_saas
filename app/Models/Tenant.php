@@ -12,12 +12,14 @@ class Tenant extends Model
         'name', 'slug', 'gstin', 'pan', 'state_code', 'address', 'logo_path',
         'currency', 'financial_year_start_month', 'financial_year_start_day',
         'invoice_prefix', 'status', 'trial_ends_at',
+        'onboarding_completed_at',
     ];
 
     protected $casts = [
         'financial_year_start_month' => 'integer',
         'financial_year_start_day' => 'integer',
         'trial_ends_at' => 'datetime',
+        'onboarding_completed_at' => 'datetime',
     ];
 
     public function users(): BelongsToMany

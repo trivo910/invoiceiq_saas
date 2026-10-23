@@ -1,6 +1,6 @@
 # SaaS conversion roadmap
 
-Status after Phase 1: **Phase 1 complete; Phase 2 not started**.
+Status after Phase 2: **Phases 1 and 2 complete; Phase 3 next**.
 
 ## Phase 0 — Documentation setup
 
@@ -18,11 +18,12 @@ Status after Phase 1: **Phase 1 complete; Phase 2 not started**.
 - [x] Add database queue configuration and queue tables for hosting constraints.
 - [x] Update schema/docs and apply migrations to configured local MySQL; preflight contained customers/items/settings/users but no invoices.
 
-## Phase 2 — Auth and onboarding (not started)
+## Phase 2 — Auth and onboarding (complete)
 
-- [ ] Registration creates user/workspace atomically; verification and password lifecycle.
-- [ ] Onboarding for company/GST/logo/numbering and optional first records.
-- [ ] Tenant member invites and roles/policies.
+- [x] Registration atomically creates an owner and workspace; signed email verification and password reset flows.
+- [x] Onboarding for company/GST/logo/invoice prefix and optional customer/item.
+- [x] Tenant-scoped invitations, membership role changes/removal, and Gate-based role checks.
+- [x] Add SMTP/log mail configuration and apply the auth/invitation migration on configured local MySQL.
 
 ## Phase 3 — Isolation audit (not started)
 

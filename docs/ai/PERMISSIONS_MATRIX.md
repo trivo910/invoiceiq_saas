@@ -1,6 +1,6 @@
 # Permissions matrix
 
-Target roles requested for each tenant: Owner, Admin, Accountant, Staff, Viewer. Phase 1 added a per-tenant `tenant_user.role` membership value and mapped migrated admin/staff/viewer users to owner/staff/viewer. Existing route middleware still checks the legacy global `users.role`; Phase 2 must move enforcement to membership roles and policies.
+Tenant roles are enforced against the active `tenant_user.role` membership. The legacy global `users.role` remains for compatibility with older rows but is not checked when tenant context is active. Workspace and destructive-record access use Laravel Gates.
 
 | Action | Owner | Admin | Accountant | Staff | Viewer |
 |---|---:|---:|---:|---:|---:|
@@ -17,8 +17,8 @@ Target roles requested for each tenant: Owner, Admin, Accountant, Staff, Viewer.
 | Delete/recover workspace | Yes | No | No | No | No |
 | Use super-admin tenant/plan controls | No | No | No | No | No |
 
-Policies/gates to introduce with implementation include `viewAny`, `view`, `create`, `update`, `delete` for Invoice, Customer, Item, Payment; `viewReports`/`exportReports`; `manageSettings`; `manageMembers`/`inviteMembers`; `manageBilling`; and `deleteWorkspace`. Exact policy names and accountant/staff write boundaries must be implemented consistently and tested. Super-admin authorization belongs to a separate guard/role, not tenant role strings.
+Implemented Gates: `manage-workspace` (owner/admin), `write-records` (owner/admin/accountant/staff), and `delete-records` (owner/admin). Super-admin authorization belongs to a separate guard/role, not tenant role strings.
 
 ## Current behavior observed
 
-Routes permit admin/staff to write invoices, customers, and items; all authenticated roles can read core lists and GST reports; admin alone controls settings and user CRUD. Legacy admin/staff/viewer remain defined in `User`. No Owner/Accountant policy enforcement exists yet.
+All verified workspace roles can read core lists and GST reports. Owner/admin/accountant/staff can create and edit invoices, customers, items, record payments, and send invoices; only owner/admin can delete records, edit settings, or manage members. Members and invitations are scoped to the active workspace. GST report export remains available to all roles as read-only access.

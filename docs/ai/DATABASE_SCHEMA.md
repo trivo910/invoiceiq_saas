@@ -1,13 +1,14 @@
 # Database schema
 
-## Current schema through Phase 1
+## Current schema through Phase 2
 
 The following describes checked-in migrations after Phase 1. The local configured MySQL database was also inspected before and after migration; other deployed databases may differ and require their own preflight.
 
 | Table | Columns and relationships | Indexes/uniqueness |
 |---|---|---|
-| `tenants` | id, name, slug, gstin, pan, state_code, address, logo_path, currency, financial_year_start_month/day, invoice_prefix, status, trial_ends_at, timestamps | unique slug |
-| `tenant_user` | id, tenant_id FK, user_id FK, role, timestamps | unique tenant_id+user_id; user_id+tenant_id index |
+| `tenants` | id, name, slug, gstin, pan, state_code, address, logo_path, currency, financial_year_start_month/day, invoice_prefix, status, trial_ends_at, onboarding_completed_at, timestamps | unique slug |
+| `tenant_user` | id, tenant_id FK, user_id FK, role (`owner`, `admin`, `accountant`, `staff`, `viewer`), timestamps | unique tenant_id+user_id; user_id+tenant_id index |
+| `tenant_invitations` | id, tenant_id FK, invited_by FK, email, role, SHA-256 token hash, expires_at, accepted_at, timestamps | unique token_hash; unique tenant_id+email |
 | `settings` | id, tenant_id FK, key, nullable text value, timestamps | unique tenant_id+key |
 | `customers` | id, tenant_id FK, name, gstin/pan/email/phone, billing/shipping address/city/state/state_code/pincode, credit_limit, payment_terms, notes, is_active, timestamps | unique tenant_id+gstin (multiple NULLs allowed); existing name/gstin/email/billing_state and active+name indexes |
 | `items` | id, tenant_id FK, name, code, hsn_sac, description, type, rate, gst_rate, unit, is_active, timestamps | unique tenant_id+code; existing name and active+name indexes |
@@ -26,7 +27,7 @@ Business tables `settings`, `customers`, `items`, `invoices`, `invoice_items`, a
 
 ## Membership and ownership
 
-Users remain global identity records. `tenant_user` supports multiple workspaces and holds the role per workspace. Phase 1 currently resolves the lowest-ID membership; workspace switching and invite management arrive in Phase 2. Password reset and queue infrastructure tables are not tenant-owned.
+Users remain global identity records. `tenant_user` supports multiple workspaces and holds the role per workspace. Requests select the session's tenant when the user belongs to it; otherwise they use the lowest-ID membership. Accepting an invitation selects that workspace in the session. Password reset and queue infrastructure tables are not tenant-owned.
 
 ## Migration order and status
 
@@ -35,9 +36,10 @@ Users remain global identity records. `tenant_user` supports multiple workspaces
 3. [x] Replace global settings-key, item-code, and invoice-number constraints with tenant-scoped composite unique indexes; add tenant-scoped unique customer GSTIN after duplicate preflight. Empty GSTIN strings are normalized to NULL.
 4. [x] Create per-tenant financial-year sequence rows; preserve historical invoice numbers.
 5. [x] Add database queue config and jobs/batches/failed-jobs tables for shared-host-compatible queuing.
-6. [ ] Phase 3: tenant-aware raw-query/report indexes, linked-record validation, and isolation tests.
+6. [x] Add onboarding state, mark migrated tenants complete and existing users verified to preserve their access, then add tenant invitations.
+7. [ ] Phase 3: tenant-aware raw-query/report indexes, linked-record validation, and isolation tests.
 
-Migration files: `2026_10_23_000001_create_tenants_and_scope_business_data.php`, `2026_10_23_000002_create_database_queue_tables.php`, `2026_10_23_000003_add_tenant_scoped_customer_gstin_unique.php`.
+Migration files: `2026_10_23_000001_create_tenants_and_scope_business_data.php`, `2026_10_23_000002_create_database_queue_tables.php`, `2026_10_23_000003_add_tenant_scoped_customer_gstin_unique.php`, `2026_10_23_000004_add_phase_two_auth_and_invitations.php`.
 
 ## Preflight and verification
 

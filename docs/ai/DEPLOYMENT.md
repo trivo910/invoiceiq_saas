@@ -2,7 +2,9 @@
 
 ## Current documented setup
 
-Root `README.md` describes PHP 8.2+, Composer, `php artisan migrate --seed`, and local serving. Phase 1 adds `.env.example` with MySQL and database queue defaults; `setup.sh` configures MySQL interactively and runs Composer/migrations/seeding. No production deployment was verified.
+Root `README.md` describes PHP 8.2+, Composer, `php artisan migrate --seed`, and local serving. Phases 1 and 2 add `.env.example` with MySQL, database queue, and log mail defaults; `setup.sh` configures MySQL interactively and runs Composer/migrations/seeding. No production deployment was verified.
+
+Set `MAIL_MAILER=smtp`, `MAIL_HOST`, `MAIL_PORT`, optional `MAIL_USERNAME`/`MAIL_PASSWORD`, `MAIL_SCHEME` when needed, and `MAIL_FROM_ADDRESS`/`MAIL_FROM_NAME` for verification, password reset, and invitation delivery. The `log` mailer is suitable only for local development.
 
 ## Target common requirements
 

@@ -9,7 +9,7 @@ use Symfony\Component\HttpFoundation\Response;
 class CheckRole
 {
     /**
-     * Usage: ->middleware('role:admin')  or  ->middleware('role:admin,staff')
+     * Usage: ->middleware('role:owner,admin')
      */
     public function handle(Request $request, Closure $next, string ...$roles): Response
     {

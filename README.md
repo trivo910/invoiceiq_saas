@@ -42,9 +42,15 @@ DB_PASSWORD=yourpassword
 ```
 Then: `php artisan migrate --seed`. The tenancy foundation migration creates a default workspace and assigns legacy business records and existing users to it.
 
+## Accounts and workspace setup
+
+Visitors can create an account and workspace. New accounts must verify their email before using billing screens. Configure `MAIL_MAILER=smtp` and the SMTP host, port, credentials, encryption, and sender in `.env` to deliver verification, password reset, and team invitation emails. The default `log` mailer writes email content to the Laravel log for local development.
+
+After verification, the workspace owner completes company/GST details and invoice prefix setup. Adding an initial customer and item is optional. Owners and admins can invite teammates with workspace-scoped roles.
+
 ## Tenancy foundation
 
-Business records are scoped to a workspace through `tenant_id`. Existing users are attached to the default tenant in the migration. Each authenticated user currently resolves their first tenant membership; workspace switching and invitations are part of a later phase. Invoice numbers use a tenant-specific financial-year sequence and the configured invoice prefix. The core invoice GST calculation and inline invoice workflow are unchanged.
+Business records are scoped to a workspace through `tenant_id`. Existing users are attached to the default tenant in the migration. A user's first workspace membership is selected automatically; workspace switching is not part of this phase. Invoice numbers use a tenant-specific financial-year sequence and the configured invoice prefix. The core invoice GST calculation and inline invoice workflow are unchanged.
 
 ## PDF Generation
 Uses `barryvdh/laravel-dompdf`. Installed via composer automatically.

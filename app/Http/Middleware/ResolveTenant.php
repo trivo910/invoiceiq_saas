@@ -15,7 +15,10 @@ class ResolveTenant
 
     public function handle(Request $request, Closure $next): Response
     {
-        $tenant = $request->user()?->tenants()->orderBy('tenants.id')->first();
+        $memberships = $request->user()?->tenants();
+        $selectedId = $request->session()->get('current_tenant_id');
+        $tenant = $selectedId ? $memberships?->where('tenants.id', $selectedId)->first() : null;
+        $tenant ??= $memberships?->orderBy('tenants.id')->first();
         abort_unless($tenant, 403, 'Your account is not associated with a workspace.');
 
         $this->context->set($tenant);

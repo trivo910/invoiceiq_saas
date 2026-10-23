@@ -23,6 +23,11 @@ class TenantContext
         return $this->tenant?->getKey();
     }
 
+    public function tenant(): ?\App\Models\Tenant
+    {
+        return $this->tenant;
+    }
+
     public function clear(): void
     {
         $this->tenant = null;

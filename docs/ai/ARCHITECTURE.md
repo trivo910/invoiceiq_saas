@@ -2,14 +2,14 @@
 
 ## Current application (observed)
 
-Laravel 11 routes requests through `routes/web.php` into controllers, Eloquent models, Blade views, and MySQL. Phase 1 adds tenant middleware/context, a tenant scope trait, and the invoice numbering service. Most validation remains inside controllers; invoice math is split between the invoice controller and browser JavaScript. Dashboard and GST reports still include direct `DB` queries that require Phase 3 audit.
+Laravel 11 routes requests through `routes/web.php` into controllers, Eloquent models, Blade views, and MySQL. Phases 1 and 2 add tenant middleware/context, membership-based authorization Gates, auth lifecycle, onboarding, invitations, and invoice numbering. Most validation remains inside controllers; invoice math is split between the invoice controller and browser JavaScript. Dashboard and GST reports still include direct `DB` queries that require Phase 3 audit.
 
 ## Target tenancy design
 
 - One MySQL database and shared tables, with `tenant_id` on every tenant-owned business record.
 - `tenants` represents a company/workspace; authenticated membership resolves the active tenant. Initial account creation creates the default workspace and associates the owner.
 - A `BelongsToTenant` model trait supplies tenant scope and tenant assignment. Tenant resolution must be explicit and fail closed when a tenant is required but unavailable.
-- Users connect to tenants through `tenant_user`, with a role per membership. Until workspace switching is implemented, requests select the lowest-ID membership.
+- Users connect to tenants through `tenant_user`, with a role per membership. Requests use the session-selected tenant when valid, otherwise the lowest-ID membership; accepting an invitation selects that workspace.
 - Authenticated web request flow: authenticate user → resolve membership/current tenant → enforce role/policy and subscription/plan limits → execute tenant-scoped controller/service → render response.
 - Route model binding, autocomplete, reports, exports, PDF/logo access, and queued work must retain tenant context.
 - Optional subdomain resolution remains off until a later planned phase.
@@ -22,7 +22,7 @@ Keep current Laravel folders. Add focused `app/Services`, `app/Http/Requests`, `
 
 Invoice numbering should be tenant and financial-year scoped, configurable by tenant prefix, and claimed inside a DB transaction using a locked sequence row. Webhooks must be signature-verified and idempotent. Use the database queue driver; cron invokes `schedule:run`. The host may not support persistent workers, Redis, or Horizon.
 
-Phase 1 implements the tenant root, membership pivot, request context, scoped business models, financial-year numbering service, and database queue config/tables. Raw report/dashboard queries and private file handling remain later isolation work.
+Phase 1 implements the tenant root, membership pivot, request context, scoped business models, financial-year numbering service, and database queue config/tables. Phase 2 adds registration, verification, recovery, onboarding, member invitations, and role Gates. Raw report/dashboard queries and file isolation remain later work.
 
 ## Data transition
 

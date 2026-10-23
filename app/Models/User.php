@@ -5,12 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Models\Tenant;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, MustVerifyEmailTrait;
 
     protected $fillable = ['name', 'email', 'password', 'role'];
 
@@ -21,11 +23,7 @@ class User extends Authenticatable
         'password'          => 'hashed',
     ];
 
-    const ROLES = [
-        'admin'  => 'Admin',
-        'staff'  => 'Staff',
-        'viewer' => 'Viewer',
-    ];
+    public const ROLES = ['owner' => 'Owner', 'admin' => 'Admin', 'accountant' => 'Accountant', 'staff' => 'Staff', 'viewer' => 'Viewer'];
 
     /** Full access — user management, settings, all CRUD */
     public function isAdmin(): bool
@@ -48,18 +46,28 @@ class User extends Authenticatable
     /** Check if the user has any of the given roles */
     public function hasRole(string|array $roles): bool
     {
-        return in_array($this->role, (array) $roles);
+        $tenantId = app(\App\Support\TenantContext::class)->id();
+        $role = $tenantId
+            ? $this->tenants()->where('tenants.id', $tenantId)->value('tenant_user.role')
+            : $this->role;
+        return in_array($role, (array) $roles, true);
     }
 
     /** Can create/edit/delete business records */
     public function canWrite(): bool
     {
-        return $this->hasRole(['admin', 'staff']);
+        return $this->hasRole(['owner', 'admin', 'accountant', 'staff']);
     }
 
     public function getRoleLabelAttribute(): string
     {
-        return self::ROLES[$this->role] ?? ucfirst($this->role);
+        return self::ROLES[$this->membership_role ?? $this->role] ?? ucfirst($this->membership_role ?? $this->role);
+    }
+
+    public function getMembershipRoleAttribute(): ?string
+    {
+        $tenantId = app(\App\Support\TenantContext::class)->id();
+        return $tenantId ? $this->tenants()->where('tenants.id', $tenantId)->value('tenant_user.role') : null;
     }
 
     public function getRoleColorAttribute(): string
