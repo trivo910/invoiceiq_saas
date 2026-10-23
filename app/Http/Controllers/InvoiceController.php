@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
+use Illuminate\Validation\Rule;
+use App\Support\TenantContext;
 
 class InvoiceController extends Controller
 {
@@ -51,10 +53,16 @@ class InvoiceController extends Controller
         return view('invoices.form', compact('number', 'settings', 'customers'));
     }
 
+    public function numberPreview(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $data = $request->validate(['invoice_date' => 'nullable|date']);
+        return response()->json(['number' => Invoice::peekNumber($data['invoice_date'] ?? null)]);
+    }
+
     public function store(Request $request)
     {
         $request->validate([
-            'number'           => 'required|unique:invoices,number',
+            'number'           => ['required', Rule::unique('invoices', 'number')->where('tenant_id', app(TenantContext::class)->id())],
             'invoice_date'     => 'required|date',
             'customer_name'    => 'required|string',
             'rows'             => 'required|array|min:1',
@@ -69,8 +77,8 @@ class InvoiceController extends Controller
                 $data = $this->invoiceData($request);
 
                 // Atomically claim the next sequence number when the user kept the suggestion
-                if ($request->number === Invoice::peekNumber()) {
-                    $data['number'] = Invoice::nextNumber();
+                if ($request->number === Invoice::peekNumber($request->input('invoice_date'))) {
+                    $data['number'] = Invoice::nextNumber($request->input('invoice_date'));
                 }
 
                 $invoice = Invoice::create($data);
@@ -103,7 +111,7 @@ class InvoiceController extends Controller
     public function update(Request $request, Invoice $invoice)
     {
         $request->validate([
-            'number'           => "required|unique:invoices,number,{$invoice->id}",
+            'number'           => ['required', Rule::unique('invoices', 'number')->ignore($invoice->id)->where('tenant_id', app(TenantContext::class)->id())],
             'invoice_date'     => 'required|date',
             'customer_name'    => 'required|string',
             'rows'             => 'required|array|min:1',

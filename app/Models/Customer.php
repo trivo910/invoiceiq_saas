@@ -4,9 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Concerns\BelongsToTenant;
 
 class Customer extends Model
 {
+    use BelongsToTenant;
+
     protected $fillable = [
         'name', 'gstin', 'pan', 'email', 'phone',
         'billing_address', 'billing_city', 'billing_state', 'billing_state_code', 'billing_pincode',
@@ -23,6 +26,12 @@ class Customer extends Model
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
+    }
+
+    public function setGstinAttribute(?string $value): void
+    {
+        $normalized = strtoupper(trim((string) $value));
+        $this->attributes['gstin'] = $normalized === '' ? null : $normalized;
     }
 
     public function scopeActive($query)

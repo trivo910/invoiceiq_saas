@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use App\Models\Tenant;
 
 class User extends Authenticatable
 {
@@ -68,5 +70,10 @@ class User extends Authenticatable
             'viewer' => 'badge-gray',
             default  => 'badge-gray',
         };
+    }
+
+    public function tenants(): BelongsToMany
+    {
+        return $this->belongsToMany(Tenant::class)->withPivot('role')->withTimestamps();
     }
 }

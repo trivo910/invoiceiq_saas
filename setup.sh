@@ -9,7 +9,14 @@ echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━�
 echo -e " InvoiceIQ — MySQL Setup"
 echo -e "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
-[ ! -f .env ] && cp .env.example .env && echo -e "${GREEN}✓ .env created${NC}"
+if [ ! -f .env ]; then
+  if [ ! -f .env.example ]; then
+    echo -e "${YELLOW}Missing .env.example. Run this script from the InvoiceIQ project root.${NC}"
+    exit 1
+  fi
+  cp .env.example .env
+  echo -e "${GREEN}✓ .env created${NC}"
+fi
 
 echo -e "\n${YELLOW}Enter MySQL credentials:${NC}"
 read -p "  Host     [127.0.0.1]: " H; H=${H:-127.0.0.1}

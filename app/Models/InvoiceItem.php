@@ -4,9 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Concerns\BelongsToTenant;
 
 class InvoiceItem extends Model
 {
+    use BelongsToTenant;
+
     protected $fillable = [
         'invoice_id', 'item_id', 'sort_order',
         'item_name', 'hsn_sac', 'description', 'unit',

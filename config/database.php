@@ -1,7 +1,7 @@
 <?php
 use Illuminate\Support\Str;
 return [
-    'default' => env('DB_CONNECTION', 'sqlite'),
+    'default' => env('DB_CONNECTION', 'mysql'),
     'connections' => [
         'sqlite' => [
             'driver'   => 'sqlite',

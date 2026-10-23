@@ -23,7 +23,7 @@ Route::post('/logout', [LoginController::class, 'destroy'])
     ->middleware('auth');
 
 // ── Authenticated routes ───────────────────────────────────────
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'tenant'])->group(function () {
 
     // Dashboard
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
@@ -31,6 +31,7 @@ Route::middleware('auth')->group(function () {
     // ── Invoices ───────────────────────────────────────────────
     // Read (all roles)
     Route::get('invoices', [InvoiceController::class, 'index'])->name('invoices.index');
+    Route::get('invoices/number-preview', [InvoiceController::class, 'numberPreview'])->name('invoices.number-preview');
     Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('invoices.pdf');
 
     // Write (admin + staff)

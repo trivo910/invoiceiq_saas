@@ -1,0 +1,1 @@
+Before doing anything, read `/docs/ai/README.md`, `PROGRESS.md`, `TENANCY_RULES.md`, and `CODING_STANDARDS.md`. After finishing work, update `PROGRESS.md`, `ROADMAP.md`, `CHANGELOG.md`, and any affected doc.

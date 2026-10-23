@@ -713,6 +713,25 @@ let searchT  = {};
 
 /* ── Boot ── */
 document.addEventListener('DOMContentLoaded', () => {
+    const invoiceNumberInput = document.getElementById('invNumber');
+    const invoiceDateInput = document.querySelector('[name="invoice_date"]');
+    if (!@json($isEdit) && invoiceNumberInput && invoiceDateInput) {
+        let generatedNumber = invoiceNumberInput.value;
+        invoiceDateInput.addEventListener('change', async () => {
+            if (invoiceNumberInput.value !== generatedNumber || !invoiceDateInput.value) return;
+            const selectedDate = invoiceDateInput.value;
+            try {
+                const response = await fetch(@json(route('invoices.number-preview')) + '?invoice_date=' + encodeURIComponent(selectedDate), {headers: HDR});
+                if (!response.ok || invoiceDateInput.value !== selectedDate) return;
+                const result = await response.json();
+                invoiceNumberInput.value = result.number;
+                generatedNumber = result.number;
+            } catch (error) {
+                console.error('Could not refresh invoice number suggestion.', error);
+            }
+        });
+    }
+
     const seed = @json($rows);
     if (!seed.length) addRow();
     else seed.forEach(r => addRow(r));

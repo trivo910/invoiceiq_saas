@@ -6,6 +6,8 @@ use App\Models\Customer;
 use App\Models\Item;
 use App\Models\Setting;
 use App\Models\User;
+use App\Models\Tenant;
+use App\Support\TenantContext;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -13,8 +15,11 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        $tenant = Tenant::query()->orderBy('id')->firstOrFail();
+        app(TenantContext::class)->set($tenant);
+
         // Default admin user
-        User::updateOrCreate(
+        $admin = User::updateOrCreate(
             ['email' => 'admin@invoiceiq.com'],
             [
                 'name'     => 'Admin',
@@ -22,6 +27,7 @@ class DatabaseSeeder extends Seeder
                 'role'     => 'admin',
             ]
         );
+        $admin->tenants()->syncWithoutDetaching([$tenant->id => ['role' => 'owner']]);
 
         // Default settings
         $defaults = [

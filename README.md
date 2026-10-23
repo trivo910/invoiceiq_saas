@@ -1,5 +1,5 @@
 # InvoiceIQ — GST Billing Suite
-**Laravel 11 + Blade | SQLite (or MySQL) | PHP 8.2+**
+**Laravel 11 + Blade | MySQL | PHP 8.2+**
 
 ## Quick Setup (4 commands)
 
@@ -28,7 +28,7 @@ Open: **http://localhost:8000**
 ## Requirements
 - PHP >= 8.2
 - Composer
-- SQLite (default, zero config) OR MySQL
+- MySQL 8.0+
 
 ## Using MySQL
 Edit `.env`:
@@ -40,7 +40,11 @@ DB_DATABASE=invoiceiq
 DB_USERNAME=root
 DB_PASSWORD=yourpassword
 ```
-Then: `php artisan migrate --seed`
+Then: `php artisan migrate --seed`. The tenancy foundation migration creates a default workspace and assigns legacy business records and existing users to it.
+
+## Tenancy foundation
+
+Business records are scoped to a workspace through `tenant_id`. Existing users are attached to the default tenant in the migration. Each authenticated user currently resolves their first tenant membership; workspace switching and invitations are part of a later phase. Invoice numbers use a tenant-specific financial-year sequence and the configured invoice prefix. The core invoice GST calculation and inline invoice workflow are unchanged.
 
 ## PDF Generation
 Uses `barryvdh/laravel-dompdf`. Installed via composer automatically.
@@ -50,10 +54,11 @@ Access at: `/invoices/{id}/pdf`
 ```
 app/
   Http/Controllers/    — Dashboard, Invoice, Customer, Item, Settings
-  Models/              — Invoice, InvoiceItem, Customer, Item, Payment, Setting
+  Models/              — Tenant, Invoice, InvoiceItem, Customer, Item, Payment, Setting
+  Services/            — tenant-scoped invoice numbering
   helpers.php          — fmt_inr(), number_to_words(), setting()
 database/
-  migrations/          — All 6 tables
+  migrations/          — core schema, tenancy, and database queue tables
   seeders/             — Sample data
 resources/views/
   layouts/app.blade.php

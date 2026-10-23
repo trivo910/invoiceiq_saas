@@ -5,10 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Facades\DB;
+use App\Models\Concerns\BelongsToTenant;
+use App\Services\InvoiceNumberingService;
 
 class Invoice extends Model
 {
+    use BelongsToTenant;
+
     protected $fillable = [
         'number', 'status', 'invoice_date', 'due_date',
         'customer_id', 'customer_name', 'customer_gstin',
@@ -88,26 +91,14 @@ class Invoice extends Model
     }
 
     // Preview the next invoice number without consuming the sequence
-    public static function peekNumber(): string
+    public static function peekNumber(?string $invoiceDate = null): string
     {
-        $prefix = setting('invoice_prefix', 'INV');
-        $year   = date('Y');
-        $seq    = (int) setting('invoice_seq', 1);
-        return "{$prefix}-{$year}-" . str_pad($seq, 4, '0', STR_PAD_LEFT);
+        return app(InvoiceNumberingService::class)->peek($invoiceDate);
     }
 
     // Atomically claim and advance the sequence — MUST be called inside DB::transaction()
-    public static function nextNumber(): string
+    public static function nextNumber(?string $invoiceDate = null): string
     {
-        $row  = DB::table('settings')->where('key', 'invoice_seq')->lockForUpdate()->first();
-        $seq  = $row ? (int) $row->value : 1;
-
-        $prefix = setting('invoice_prefix', 'INV');
-        $year   = date('Y');
-        $number = "{$prefix}-{$year}-" . str_pad($seq, 4, '0', STR_PAD_LEFT);
-
-        set_setting('invoice_seq', $seq + 1);
-
-        return $number;
+        return app(InvoiceNumberingService::class)->next($invoiceDate);
     }
 }
