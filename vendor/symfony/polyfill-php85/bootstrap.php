@@ -31,7 +31,7 @@ if (!function_exists('array_last')) {
     function array_last(array $array) { return p\Php85::array_last($array); }
 }
 
-if (!function_exists('locale_is_right_to_left')) {
+if (extension_loaded('intl') && !function_exists('locale_is_right_to_left')) {
     function locale_is_right_to_left(string $locale): bool { return p\Php85::locale_is_right_to_left($locale); }
 }
 
@@ -41,6 +41,12 @@ if (\PHP_VERSION_ID >= 80000) {
     return;
 }
 
+if (!class_exists('ValueError', false)) {
+    class ValueError extends Error
+    {
+    }
+}
+
 if (extension_loaded('intl') && !function_exists('grapheme_levenshtein')) {
-    function grapheme_levenshtein(string $string1, string $string2, int $insertion_cost = 1, int $replacement_cost = 1, int $deletion_cost = 1, string $locale = '') { return p\Php85::grapheme_levenshtein($string1, $string2, $insertion_cost, $replacement_cost, $deletion_cost); }
+    function grapheme_levenshtein(string $string1, string $string2, ?int $insertion_cost = 1, ?int $replacement_cost = 1, ?int $deletion_cost = 1, string $locale = '') { return p\Php85::grapheme_levenshtein($string1, $string2, (int) $insertion_cost, (int) $replacement_cost, (int) $deletion_cost, $locale); }
 }
