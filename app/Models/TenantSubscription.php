@@ -16,7 +16,8 @@ class TenantSubscription extends Model
     protected $casts = [
         'trial_ends_at' => 'datetime', 'current_period_starts_at' => 'datetime',
         'current_period_ends_at' => 'datetime', 'grace_ends_at' => 'datetime',
-        'cancel_at_period_end' => 'datetime', 'ended_at' => 'datetime', 'provider_metadata' => 'array',
+        'cancel_at_period_end' => 'datetime', 'ended_at' => 'datetime',
+        'provider_state_at' => 'datetime', 'provider_metadata' => 'array',
     ];
 
     public function plan(): BelongsTo { return $this->belongsTo(Plan::class); }

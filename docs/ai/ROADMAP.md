@@ -41,6 +41,7 @@ Status: **Phases 1–3 complete; Phase 4 foundation implemented, awaiting produc
 - [x] Save failed renewal attempts from signed webhooks in tenant billing history without issuing invoices; verify provider event replay is idempotent.
 - [x] Verify signed webhook payment records follow the provider subscription's tenant even when another tenant is active in request context.
 - [x] Add a local/testing-only demo catalog and seven-day grace assumption; label sample values and block checkout/tax invoice issuance in demo mode.
+- [x] Prevent out-of-order signed provider events from overwriting newer subscription state while retaining payment history.
 - [ ] Set approved plan prices/limits, Razorpay plan IDs and cycle count; run provider sandbox verification.
 - [ ] Set seller GST/SAC invoice details and approved GST treatment; verify tax invoice output.
 - [ ] Set approved grace period, downgrade-over-limit, proration, and refund rules.

@@ -45,25 +45,41 @@ class RazorpayWebhookService
             try {
                 $subscription = TenantSubscription::query()->findOrFail($subscriptionRow->id);
                 $event = (string) ($payload['event'] ?? '');
-                if (in_array($event, ['subscription.activated', 'subscription.charged', 'subscription.resumed'], true)) {
+                $stateEvents = [
+                    'subscription.activated', 'subscription.charged', 'subscription.resumed',
+                    'subscription.pending', 'subscription.halted', 'payment.failed',
+                    'subscription.cancelled', 'subscription.completed',
+                ];
+                $providerEventAt = is_numeric($payload['created_at'] ?? null) && (int) $payload['created_at'] > 0
+                    ? now()->setTimestamp((int) $payload['created_at'])
+                    : null;
+                $staleStateEvent = in_array($event, $stateEvents, true)
+                    && $providerEventAt
+                    && $subscription->provider_state_at
+                    && $providerEventAt->lt($subscription->provider_state_at);
+
+                if (! $staleStateEvent && in_array($event, ['subscription.activated', 'subscription.charged', 'subscription.resumed'], true)) {
                     $subscription->update([
                         'status' => 'active',
                         'current_period_starts_at' => isset($subscriptionData['current_start']) ? now()->setTimestamp((int) $subscriptionData['current_start']) : $subscription->current_period_starts_at,
                         'current_period_ends_at' => isset($subscriptionData['current_end']) ? now()->setTimestamp((int) $subscriptionData['current_end']) : $subscription->current_period_ends_at,
                         'grace_ends_at' => null,
                     ]);
-                } elseif (in_array($event, ['subscription.pending', 'subscription.halted', 'payment.failed'], true) && $subscription->status !== 'pending') {
+                } elseif (! $staleStateEvent && in_array($event, ['subscription.pending', 'subscription.halted', 'payment.failed'], true) && $subscription->status !== 'pending') {
                     $graceDays = config('billing.grace_days');
                     $subscription->update([
                         'status' => 'past_due',
                         'grace_ends_at' => $subscription->grace_ends_at ?? ($graceDays === null ? null : now()->addDays((int) $graceDays)),
                     ]);
-                } elseif ($event === 'subscription.cancelled') {
+                } elseif (! $staleStateEvent && $event === 'subscription.cancelled') {
                     $endsAt = isset($subscriptionData['current_end']) ? now()->setTimestamp((int) $subscriptionData['current_end']) : $subscription->current_period_ends_at;
                     $subscription->update(['status' => 'cancelled', 'current_period_ends_at' => $endsAt, 'ended_at' => $endsAt && $endsAt->isPast() ? now() : null]);
-                } elseif ($event === 'subscription.completed') {
+                } elseif (! $staleStateEvent && $event === 'subscription.completed') {
                     $endsAt = $subscription->current_period_ends_at;
                     $subscription->update(['status' => 'cancelled', 'ended_at' => $endsAt && $endsAt->isFuture() ? $endsAt : now()]);
+                }
+                if (! $staleStateEvent && $providerEventAt && in_array($event, $stateEvents, true)) {
+                    $subscription->update(['provider_state_at' => $providerEventAt]);
                 }
 
                 $captured = in_array($event, ['payment.captured', 'subscription.charged'], true);

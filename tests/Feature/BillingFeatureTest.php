@@ -289,6 +289,36 @@ class BillingFeatureTest extends TestCase
             ->assertSee('(demo only; no tax quote)')->assertDontSee('@elseif');
     }
 
+    public function test_older_provider_webhook_cannot_overwrite_newer_subscription_state(): void
+    {
+        [$tenant, , $subscription] = $this->workspace('Ordered events', 'ordered-events@example.test', now()->addDays(10), null, 'sub_ordered_123');
+        $subscription->update(['status' => 'active']);
+        config(['billing.razorpay.webhook_secret' => 'webhook-secret']);
+        $newerAt = now()->timestamp;
+        $cancelledAt = now()->addDays(20)->timestamp;
+        $cancelPayload = [
+            'event' => 'subscription.cancelled', 'created_at' => $newerAt,
+            'payload' => ['subscription' => ['entity' => ['id' => 'sub_ordered_123', 'current_end' => $cancelledAt]]],
+        ];
+        $this->sendSignedWebhook('evt_ordered_cancel', $cancelPayload)->assertNoContent();
+
+        $olderAt = now()->subDay()->timestamp;
+        $failurePayload = [
+            'event' => 'payment.failed', 'created_at' => $olderAt,
+            'payload' => [
+                'subscription' => ['entity' => ['id' => 'sub_ordered_123']],
+                'payment' => ['entity' => ['id' => 'pay_ordered_old', 'subscription_id' => 'sub_ordered_123', 'amount' => 50000, 'currency' => 'INR']],
+            ],
+        ];
+        $this->sendSignedWebhook('evt_ordered_old_failure', $failurePayload)->assertNoContent();
+
+        $updatedSubscription = DB::table('tenant_subscriptions')->where('id', $subscription->id)->first();
+        $this->assertSame('cancelled', $updatedSubscription->status);
+        $this->assertSame($newerAt, now()->parse($updatedSubscription->provider_state_at)->timestamp);
+        $this->assertSame('failed', DB::table('billing_payments')->where('provider_payment_id', 'pay_ordered_old')->value('status'));
+        $this->assertSame($tenant->id, DB::table('billing_payments')->where('provider_payment_id', 'pay_ordered_old')->value('tenant_id'));
+    }
+
     public function test_explicit_plan_feature_denial_redirects_to_billing(): void
     {
         [$tenant, $user] = $this->workspace('No Reports', 'no-reports@example.test', now()->addDays(10), null);
@@ -315,5 +345,15 @@ class BillingFeatureTest extends TestCase
         ]);
         $this->context->clear();
         return [$tenant, $user, $subscription];
+    }
+
+    private function sendSignedWebhook(string $eventId, array $payload)
+    {
+        $raw = json_encode($payload, JSON_THROW_ON_ERROR);
+        return $this->call('POST', route('billing.webhook'), [], [], [], [
+            'CONTENT_TYPE' => 'application/json',
+            'HTTP_X_RAZORPAY_EVENT_ID' => $eventId,
+            'HTTP_X_RAZORPAY_SIGNATURE' => hash_hmac('sha256', $raw, 'webhook-secret'),
+        ], $raw);
     }
 }

@@ -17,7 +17,7 @@ The following describes checked-in migrations through Phase 4. Phase 3 changed a
 | `payments` | id, tenant_id FK, invoice FK, amount/date/mode/reference/notes, timestamps | existing invoice+payment_date index |
 | `tenant_invoice_sequences` | id, tenant_id FK, financial_year (`YYYY-YY`), next_number, timestamps | unique tenant_id+financial_year |
 | `plans` | code/name/description, nullable monthly/yearly INR price in paise, nullable invoice/member limits, nullable report/branding/API feature flags, Razorpay monthly/yearly plan IDs, active/sort fields | unique code |
-| `tenant_subscriptions` | tenant_id FK, plan_id FK, status, interval, unique Razorpay subscription ID, trial/period/grace/cancel/end timestamps, provider metadata JSON | tenant/status index |
+| `tenant_subscriptions` | tenant_id FK, plan_id FK, status, interval, unique Razorpay subscription ID, trial/period/grace/cancel/end timestamps, provider state event timestamp, provider metadata JSON | tenant/status index |
 | `billing_events` | unique provider event ID, event type, nullable tenant FK, processed timestamp | unique provider_event_id |
 | `billing_payments` | tenant_id FK, nullable subscription FK, unique provider payment ID, amount/currency/status/method/paid timestamp/provider metadata | tenant/created index |
 | `billing_invoices` | tenant_id FK, nullable payment FK, unique number, subtotal/tax/tax breakdown/total/currency, seller/buyer JSON snapshots, issue timestamp | tenant/issued index |
@@ -46,7 +46,7 @@ Users remain global identity records. `tenant_user` supports multiple workspaces
 8. [x] Phase 4 foundation: plans/subscriptions/payments/invoices/events schema; new-account trials; checkout configuration; signed/idempotent webhook processing; billing history and read-only/usage enforcement.
 9. [ ] Phase 4 product configuration: populate approved prices/limits, seller tax details, grace behavior, downgrade/proration/refund policy, then run provider sandbox and invoice QA.
 
-Migration files: `2026_10_23_000001_create_tenants_and_scope_business_data.php`, `2026_10_23_000002_create_database_queue_tables.php`, `2026_10_23_000003_add_tenant_scoped_customer_gstin_unique.php`, `2026_10_23_000004_add_phase_two_auth_and_invitations.php`, `2026_10_26_000001_create_billing_tables.php`, `2026_10_26_000002_add_tax_breakdown_to_billing_invoices.php`, and `2026_10_26_000003_make_plan_features_optional.php`.
+Migration files: `2026_10_23_000001_create_tenants_and_scope_business_data.php`, `2026_10_23_000002_create_database_queue_tables.php`, `2026_10_23_000003_add_tenant_scoped_customer_gstin_unique.php`, `2026_10_23_000004_add_phase_two_auth_and_invitations.php`, `2026_10_26_000001_create_billing_tables.php`, `2026_10_26_000002_add_tax_breakdown_to_billing_invoices.php`, `2026_10_26_000003_make_plan_features_optional.php`, and `2026_10_26_000004_add_provider_state_timestamp_to_tenant_subscriptions.php`.
 
 ## Preflight and verification
 
@@ -55,4 +55,4 @@ On the configured local MySQL database before migration: 5 customers, 9 items, 1
 New generated invoice numbers use `PREFIX-YYYY-YY-NNNN` (for example `INV-2026-27-0001`) based on the tenant's configured FY start. Existing invoice numbers are not rewritten. SQLite is not the production database target; the migration and locking behavior were exercised against the configured local MySQL only.
 
 
-Phase 3 introduced no schema migration. Phase 4 adds migrations `2026_10_26_000001_create_billing_tables.php`, `2026_10_26_000002_add_tax_breakdown_to_billing_invoices.php`, and `2026_10_26_000003_make_plan_features_optional.php`. Feature tests run against a separate MySQL database named invoiceiq_test; the local development database is not used by the suite. The checked local data audit found zero cross-tenant invoice/customer, line/invoice, line/item, or payment/invoice links.
+Phase 3 introduced no schema migration. Phase 4 adds migrations `2026_10_26_000001_create_billing_tables.php`, `2026_10_26_000002_add_tax_breakdown_to_billing_invoices.php`, `2026_10_26_000003_make_plan_features_optional.php`, and `2026_10_26_000004_add_provider_state_timestamp_to_tenant_subscriptions.php`. Feature tests run against a separate MySQL database named invoiceiq_test; the local development database is not used by the suite. The checked local data audit found zero cross-tenant invoice/customer, line/invoice, line/item, or payment/invoice links.
