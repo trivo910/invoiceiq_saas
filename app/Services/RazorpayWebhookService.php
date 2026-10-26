@@ -52,7 +52,7 @@ class RazorpayWebhookService
                         'current_period_ends_at' => isset($subscriptionData['current_end']) ? now()->setTimestamp((int) $subscriptionData['current_end']) : $subscription->current_period_ends_at,
                         'grace_ends_at' => null,
                     ]);
-                } elseif (in_array($event, ['subscription.pending', 'subscription.halted'], true) && $subscription->status !== 'pending') {
+                } elseif (in_array($event, ['subscription.pending', 'subscription.halted', 'payment.failed'], true) && $subscription->status !== 'pending') {
                     $graceDays = config('billing.grace_days');
                     $subscription->update([
                         'status' => 'past_due',
@@ -99,6 +99,7 @@ class RazorpayWebhookService
 
     private function issueInvoiceIfConfigured(\App\Models\Tenant $tenant, BillingPayment $payment): void
     {
+        if (config('billing.demo_mode')) return;
         $seller = config('billing.seller');
         if (! in_array($seller['price_tax_mode'], ['inclusive', 'exclusive'], true)
             || ! $seller['name'] || ! $seller['gstin'] || ! $seller['pan'] || ! $seller['address']

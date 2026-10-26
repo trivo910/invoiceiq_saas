@@ -2,7 +2,7 @@
 
 ## Current state
 
-PHPUnit 11 is a development dependency. Phase 3 added MySQL-backed two-tenant feature tests. Tests use a separate `invoiceiq_test` database configured in `phpunit.xml`; preserve the local `.env` DB host/user/password and do not point the test config at the development database.
+PHPUnit 11 is a development dependency. Phase 3 added MySQL-backed two-tenant feature tests. Tests use a separate `invoiceiq_test` database configured in `phpunit.xml`; preserve the local `.env` DB host/user/password and do not point the test config at the development database. PHPUnit explicitly disables billing demo mode so checkout and invoice integration tests exercise their configured sandbox paths.
 
 ## Target automated coverage
 
@@ -13,7 +13,7 @@ PHPUnit 11 is a development dependency. Phase 3 added MySQL-backed two-tenant fe
 - Invoice numbering concurrency/financial-year boundaries and unchanged GST calculation regression cases.
 - Subscription limits, grace/read-only state, Razorpay signature/idempotency/state transitions, and super-admin audit/impersonation.
 
-Phase 4 currently tests 14-day trial creation, trial expiry, invoice limits, feature entitlements, Razorpay checkout configuration and provider-plan matching, invalid/valid webhook signatures, event replay, successful capture/tax invoice generation, failed renewal history without invoice issuance, billing PDF tenant binding, and the Phase 3 tenant isolation suite. Full suite: `php vendor/bin/phpunit` (18 tests, 109 assertions).
+Phase 4 currently tests 14-day trial creation, trial expiry, invoice limits, feature entitlements, Razorpay checkout configuration and provider-plan matching, invalid/valid webhook signatures, event replay, successful capture/tax invoice generation, failed renewal history and `past_due` grace enforcement without invoice issuance, correct tenant assignment when webhook context differs, demo catalog labeling/checkout/invoice guards, billing PDF tenant binding, and the Phase 3 tenant isolation suite. Full suite: `php vendor/bin/phpunit` (20 tests, 133 assertions).
 
 ## Commands
 

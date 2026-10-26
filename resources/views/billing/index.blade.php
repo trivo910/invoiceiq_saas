@@ -2,6 +2,7 @@
 @section('title', 'Billing')
 @section('content')
 <div class="page-header"><div><h1>Billing</h1><p class="text-muted">Plan, trial, workspace usage and payment history.</p></div></div>
+@if(config('billing.demo_mode'))<div class="flash flash-warning">DEMO MODE: displayed prices, limits and the seven-day grace period are temporary examples. Checkout and subscription tax invoices are disabled.</div>@endif
 @if(session('billing_limit'))<div class="flash flash-warning">{{ session('billing_limit') }}</div>@endif
 @if(session('billing_read_only'))<div class="flash flash-error">{{ session('billing_read_only') }}</div>@endif
 @if(session('billing_feature'))<div class="flash flash-warning">{{ session('billing_feature') }}</div>@endif
@@ -19,6 +20,15 @@
 @if($pendingCheckout && is_string($pendingCheckout->provider_metadata['short_url'] ?? null) && str_starts_with($pendingCheckout->provider_metadata['short_url'], 'https://rzp.io/'))
 <section class="card" style="padding:20px;margin-bottom:20px"><h2>Pending checkout</h2><p>Finish the pending subscription checkout to activate the selected plan.</p><a class="btn btn-primary" href="{{ $pendingCheckout->provider_metadata['short_url'] }}" rel="noopener noreferrer">Continue checkout</a></section>
 @endif
+@php
+    $priceTaxLabel = config('billing.demo_mode')
+        ? '(demo only; no tax quote)'
+        : match (config('billing.seller.price_tax_mode')) {
+            'exclusive' => '+ GST',
+            'inclusive' => '(tax included)',
+            default => '(tax treatment not configured)',
+        };
+@endphp
 <section class="card" style="padding:20px;margin-bottom:20px">
     <h2 style="margin-top:0">Available plans</h2>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px">
@@ -28,13 +38,13 @@
             <h3>{{ $plan->name }}</h3><p>{{ $plan->description }}</p>
             <p>Invoices: {{ $plan->monthly_invoice_limit ?? 'No configured limit' }} · Members: {{ $plan->member_limit ?? 'No configured limit' }}</p>
             @if($plan->monthly_price_paise !== null)
-                <p>Monthly: ₹{{ number_format($plan->monthly_price_paise / 100, 2) }} {{ config('billing.seller.price_tax_mode') === 'exclusive' ? '+ GST' : '(tax included)' }}</p>
+                <p>Monthly: ₹{{ number_format($plan->monthly_price_paise / 100, 2) }} {{ $priceTaxLabel }}</p>
                 @if($canCheckout && $checkoutReady[$plan->id]['monthly'])
                     <form method="POST" action="{{ route('billing.checkout', $plan) }}">@csrf<input type="hidden" name="interval" value="monthly"><button class="btn btn-primary">Continue to monthly checkout</button></form>
                 @endif
             @else<p>Pricing has not been configured.</p>@endif
             @if($plan->yearly_price_paise !== null)
-                <p>Yearly: ₹{{ number_format($plan->yearly_price_paise / 100, 2) }} {{ config('billing.seller.price_tax_mode') === 'exclusive' ? '+ GST' : '(tax included)' }}</p>
+                <p>Yearly: ₹{{ number_format($plan->yearly_price_paise / 100, 2) }} {{ $priceTaxLabel }}</p>
                 @if($canCheckout && $checkoutReady[$plan->id]['yearly'])
                     <form method="POST" action="{{ route('billing.checkout', $plan) }}">@csrf<input type="hidden" name="interval" value="yearly"><button class="btn">Continue to yearly checkout</button></form>
                 @endif

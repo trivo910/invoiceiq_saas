@@ -7,6 +7,7 @@ use App\Models\BillingInvoice;
 use App\Models\Tenant;
 use App\Models\TenantSubscription;
 use App\Models\User;
+use App\Services\BillingService;
 use App\Services\WorkspaceRegistrationService;
 use App\Support\TenantContext;
 use Illuminate\Support\Facades\DB;
@@ -182,8 +183,10 @@ class BillingFeatureTest extends TestCase
     public function test_failed_renewal_is_saved_once_without_issuing_an_invoice(): void
     {
         [$tenant, , $subscription] = $this->workspace('Failed renewal', 'failed-renewal@example.test', now()->addDays(10), null, 'sub_failed_123');
+        $subscription->update(['status' => 'active']);
+        config(['billing.grace_days' => 2]);
         $raw = json_encode([
-            'event' => 'subscription.pending',
+            'event' => 'payment.failed',
             'payload' => [
                 'subscription' => ['entity' => ['id' => 'sub_failed_123']],
                 'payment' => ['entity' => [
@@ -210,6 +213,79 @@ class BillingFeatureTest extends TestCase
         $this->assertSame(['order_id' => 'order_failed_123', 'error_code' => 'BAD_REQUEST_ERROR'], json_decode($payment->provider_metadata, true));
         $this->assertSame(1, DB::table('billing_payments')->where('provider_payment_id', 'pay_failed_123')->count());
         $this->assertSame(0, DB::table('billing_invoices')->where('tenant_id', $tenant->id)->count());
+        $updatedSubscription = DB::table('tenant_subscriptions')->where('id', $subscription->id)->first();
+        $this->assertSame('past_due', $updatedSubscription->status);
+        $this->assertNotNull($updatedSubscription->grace_ends_at);
+
+        $this->context->set($tenant);
+        $subscription->refresh()->update(['grace_ends_at' => now()->subSecond()]);
+        $this->assertFalse(app(BillingService::class)->canWrite($tenant));
+    }
+
+    public function test_webhook_subscription_lookup_overrides_an_unrelated_active_tenant_context(): void
+    {
+        [$tenantA] = $this->workspace('Webhook tenant A', 'webhook-a@example.test', now()->addDays(10), null, 'sub_webhook_a');
+        [$tenantB] = $this->workspace('Webhook tenant B', 'webhook-b@example.test', now()->addDays(10), null, 'sub_webhook_b');
+        $this->context->set($tenantA);
+        $raw = json_encode([
+            'event' => 'subscription.charged',
+            'payload' => [
+                'subscription' => ['entity' => ['id' => 'sub_webhook_b']],
+                'payment' => ['entity' => ['id' => 'pay_webhook_b', 'subscription_id' => 'sub_webhook_b', 'amount' => 50000, 'currency' => 'INR']],
+            ],
+        ], JSON_THROW_ON_ERROR);
+        config(['billing.razorpay.webhook_secret' => 'webhook-secret']);
+        $headers = [
+            'CONTENT_TYPE' => 'application/json', 'HTTP_X_RAZORPAY_EVENT_ID' => 'evt_webhook_b',
+            'HTTP_X_RAZORPAY_SIGNATURE' => hash_hmac('sha256', $raw, 'webhook-secret'),
+        ];
+
+        $this->call('POST', route('billing.webhook'), [], [], [], $headers, $raw)->assertNoContent();
+
+        $payment = DB::table('billing_payments')->where('provider_payment_id', 'pay_webhook_b')->first();
+        $this->assertNotNull($payment);
+        $this->assertSame($tenantB->id, (int) $payment->tenant_id);
+        $this->assertNotSame($tenantA->id, (int) $payment->tenant_id);
+        $this->assertSame($tenantB->id, (int) DB::table('billing_events')->where('provider_event_id', 'evt_webhook_b')->value('tenant_id'));
+    }
+
+    public function test_demo_catalog_values_cannot_enable_checkout_or_issue_tax_invoices(): void
+    {
+        config(['app.env' => 'testing', 'billing.demo_mode' => true]);
+        app(\Database\Seeders\BillingDemoSeeder::class)->run();
+        $starter = Plan::where('code', 'starter')->firstOrFail();
+        $this->assertSame('Starter (Demo)', $starter->name);
+        $this->assertSame(49900, $starter->monthly_price_paise);
+        $this->assertSame(499000, $starter->yearly_price_paise);
+        $this->assertFalse(app(BillingService::class)->checkoutReady($starter, 'monthly'));
+
+        [$tenant, $user, $subscription] = $this->workspace('Demo billing', 'demo-billing@example.test', now()->addDays(10), null, 'sub_demo_123');
+        config(['billing.seller' => [
+            'name' => 'DEMO ONLY', 'gstin' => 'DEMO', 'pan' => 'DEMO', 'address' => 'DEMO ONLY',
+            'state_code' => '27', 'gst_rate' => 18, 'sac_code' => 'DEMO', 'price_tax_mode' => 'inclusive',
+        ]]);
+        $raw = json_encode([
+            'event' => 'subscription.charged',
+            'payload' => [
+                'subscription' => ['entity' => ['id' => 'sub_demo_123']],
+                'payment' => ['entity' => ['id' => 'pay_demo_123', 'subscription_id' => 'sub_demo_123', 'amount' => 10000, 'currency' => 'INR']],
+            ],
+        ], JSON_THROW_ON_ERROR);
+        config(['billing.razorpay.webhook_secret' => 'webhook-secret']);
+        $headers = [
+            'CONTENT_TYPE' => 'application/json', 'HTTP_X_RAZORPAY_EVENT_ID' => 'evt_demo_123',
+            'HTTP_X_RAZORPAY_SIGNATURE' => hash_hmac('sha256', $raw, 'webhook-secret'),
+        ];
+
+        $this->call('POST', route('billing.webhook'), [], [], [], $headers, $raw)->assertNoContent();
+
+        $this->assertSame(1, DB::table('billing_payments')->where('provider_payment_id', 'pay_demo_123')->count());
+        $this->assertSame(0, DB::table('billing_invoices')->where('tenant_id', $tenant->id)->count());
+        $this->assertSame('active', DB::table('tenant_subscriptions')->where('id', $subscription->id)->value('status'));
+        $this->actingAs($user)->withSession(['current_tenant_id' => $tenant->id])
+            ->get(route('billing.index'))
+            ->assertOk()->assertSee('DEMO MODE')->assertSee('Starter (Demo)')->assertSee('499.00')
+            ->assertSee('(demo only; no tax quote)')->assertDontSee('@elseif');
     }
 
     public function test_explicit_plan_feature_denial_redirects_to_billing(): void

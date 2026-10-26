@@ -2,7 +2,12 @@
 
 return [
     'trial_days' => (int) env('BILLING_TRIAL_DAYS', 14),
-    'grace_days' => env('BILLING_GRACE_DAYS') === null ? null : (int) env('BILLING_GRACE_DAYS'),
+    'demo_mode' => filter_var(env('BILLING_DEMO_MODE', false), FILTER_VALIDATE_BOOLEAN)
+        && in_array(env('APP_ENV', 'production'), ['local', 'testing'], true),
+    'grace_days' => env('BILLING_GRACE_DAYS') !== null
+        ? (int) env('BILLING_GRACE_DAYS')
+        : (filter_var(env('BILLING_DEMO_MODE', false), FILTER_VALIDATE_BOOLEAN)
+            && in_array(env('APP_ENV', 'production'), ['local', 'testing'], true) ? 7 : null),
     'subscription_cycle_count' => [
         'monthly' => env('RAZORPAY_MONTHLY_CYCLE_COUNT') === null ? null : (int) env('RAZORPAY_MONTHLY_CYCLE_COUNT'),
         'yearly' => env('RAZORPAY_YEARLY_CYCLE_COUNT') === null ? null : (int) env('RAZORPAY_YEARLY_CYCLE_COUNT'),

@@ -65,6 +65,7 @@ class BillingService
 
     public function checkoutReady(Plan $plan, string $interval): bool
     {
+        if (config('billing.demo_mode')) return false;
         if (! in_array($interval, ['monthly', 'yearly'], true)) return false;
         $cycleCount = config("billing.subscription_cycle_count.{$interval}");
         $maximumCycles = $interval === 'monthly' ? 1200 : 100;

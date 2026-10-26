@@ -51,6 +51,8 @@ After verification, the workspace owner completes company/GST details and invoic
 
 New workspaces receive a 14-day card-free trial by default. Phase 4 stores configurable plans, quotas, subscriptions, provider events, and billing history. Paid checkout is disabled until approved plan prices/limits, Razorpay plan IDs/credentials/cycle count, grace duration, and the SaaS seller's tax invoice details are configured. See `docs/ai/BILLING_AND_PLANS.md`; do not activate billing with placeholder tax or pricing values.
 
+For local UI and lifecycle development only, set `BILLING_DEMO_MODE=true` and run `php artisan db:seed --class=Database\\Seeders\\BillingDemoSeeder --force`. This loads marked sample prices/limits and assumes seven grace days. Demo mode is ignored in production and blocks Razorpay checkout and subscription tax invoices.
+
 ## Tenancy foundation
 
 Business records are scoped to a workspace through `tenant_id`. Existing users are attached to the default tenant in the migration. A user's first workspace membership is selected automatically; workspace switching is not part of this phase. Invoice numbers use a tenant-specific financial-year sequence and the configured invoice prefix. The core invoice GST calculation and inline invoice workflow are unchanged.

@@ -3,10 +3,10 @@
 ## Current position
 
 - **Phase:** 4 - Plans and billing
-- **Status:** Foundation implemented; waiting for approved prices, limits, seller tax identity/treatment, grace duration, and downgrade/proration/refund decisions before production billing.
+- **Status:** Local demo catalog and grace assumptions are loaded; production billing still awaits approved prices, limits, seller tax identity/treatment, grace duration, and downgrade/proration/refund decisions.
 - **Code changes:** Phase 4 plan/subscription/payment/invoice/event schema, 14-day trials, usage/read-only middleware, Razorpay checkout/webhook services, billing page/history/PDF, and tests, plus completed Phases 1-3.
 - **Migration state:** Phase 4 migrations applied to local MySQL and the separate `invoiceiq_test` database.
-- **Automated tests:** `php vendor/bin/phpunit` passes: 18 tests, 109 assertions on MySQL.
+- **Automated tests:** `php vendor/bin/phpunit` passes: 20 tests, 133 assertions on MySQL.
 
 ## Completed
 
@@ -33,10 +33,13 @@
 - Added Razorpay server-side checkout, raw-body HMAC webhook verification/idempotency, tenant payment history, configurable subscription tax invoices, billing UI, usage meters, and trial/grace/period-end read-only enforcement.
 - Added tenant-locked rechecks for invoice/member limits and feature coverage for trials, checkout, webhook replay/payment capture, private billing PDFs, and tenant isolation.
 - Added tenant-scoped failed renewal payment history from signed Razorpay webhooks; event replay creates no duplicate payment or invoice.
+- Added a two-tenant webhook regression proving provider subscription lookup assigns payment/event records to the correct workspace regardless of active request tenant context.
+- Added a guarded local/testing demo catalog (sample prices/quotas and seven-day grace) and explicit UI labeling; demo mode blocks checkout and subscription tax invoices.
+- Fixed `payment.failed` webhooks to move established subscriptions into `past_due` with the configured grace window; initial pending checkout subscriptions remain pending.
 
 ## In progress / next
 
-1. Complete Phase 4 after product supplies prices/limits, seller tax invoice details, grace duration, downgrade behavior, proration, and refund decisions; verify Razorpay sandbox events and production tax invoices.
+1. Replace local demo assumptions with approved prices/limits, seller tax invoice details, grace duration, downgrade behavior, proration, and refund decisions; then verify Razorpay sandbox events and production tax invoices.
 2. Before deploying to another installation, back up its database, preflight actual legacy data/migration drift, then rehearse migrations on staging.
 
 ## Known issues and cautions
@@ -46,8 +49,8 @@
 - A full workspace switcher and tenant-aware queued business jobs remain later work.
 - Email delivery defaults to the `log` mailer; production must configure SMTP credentials and sender identity.
 - Legacy public logos should be moved after upgrade with `php artisan tenants:migrate-legacy-logos`.
-- Paid checkout remains disabled until plan prices/Razorpay IDs, credentials, and recurring cycle count are configured; invoice issuance remains disabled until seller/GST/SAC fields and tenant state are complete.
-- `BILLING_GRACE_DAYS` is intentionally blank by default. A `past_due` subscription retains writes while no grace decision is configured; set the approved duration before production.
+- Paid checkout remains disabled in demo mode and requires provider plan IDs, credentials, recurring cycle count, and production billing configuration after demo mode is off; invoice issuance is also blocked in demo mode and requires seller/GST/SAC fields and tenant state.
+- `BILLING_DEMO_MODE=true` is enabled only in the local `.env`; its seven-day grace assumption is for local exploration. The config ignores demo mode outside `local`/`testing`. With demo mode off, `BILLING_GRACE_DAYS` remains blank by default and `past_due` retains writes until a duration is approved.
 
 ## Resume point
 
