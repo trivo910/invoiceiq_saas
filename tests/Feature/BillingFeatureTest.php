@@ -54,6 +54,55 @@ class BillingFeatureTest extends TestCase
         $this->actingAs($user)->withSession(['current_tenant_id' => $tenant->id])->post(route('invoices.store'), [])->assertRedirect(route('billing.index'))->assertSessionHas('billing_read_only');
     }
 
+    public function test_cancelled_subscription_keeps_writes_until_period_end_then_shows_read_only(): void
+    {
+        [$tenant, $user, $subscription] = $this->workspace('Cancelled access', 'cancelled-access@example.test', now()->addDays(10), null, 'sub_cancelled_access');
+        $subscription->update(['status' => 'active']);
+        $periodEnd = now()->addDay();
+        config(['billing.razorpay.webhook_secret' => 'webhook-secret']);
+
+        $this->sendSignedWebhook('evt_cancelled_access', [
+            'event' => 'subscription.cancelled', 'created_at' => now()->timestamp,
+            'payload' => ['subscription' => ['entity' => ['id' => 'sub_cancelled_access', 'current_end' => $periodEnd->timestamp]]],
+        ])->assertNoContent();
+
+        $this->context->set($tenant);
+        $billing = app(BillingService::class);
+        $this->assertTrue($billing->canWrite($tenant));
+        $this->actingAs($user)->withSession(['current_tenant_id' => $tenant->id])->get(route('billing.index'))
+            ->assertOk()->assertSee('Cancelled (access through period end)')->assertSee('Access through');
+
+        $subscription->refresh()->update(['current_period_ends_at' => now()->subSecond()]);
+        $this->assertFalse($billing->canWrite($tenant));
+        $this->actingAs($user)->withSession(['current_tenant_id' => $tenant->id])->get(route('billing.index'))
+            ->assertOk()->assertSee('Cancelled')->assertSee('This workspace is read-only');
+    }
+
+    public function test_completed_subscription_uses_provider_period_end_and_then_becomes_read_only(): void
+    {
+        [$tenant, $user, $subscription] = $this->workspace('Completed access', 'completed-access@example.test', now()->addDays(10), null, 'sub_completed_access');
+        $subscription->update(['status' => 'active', 'current_period_ends_at' => now()->subDay()]);
+        $periodEnd = now()->addDay();
+        config(['billing.razorpay.webhook_secret' => 'webhook-secret']);
+
+        $this->sendSignedWebhook('evt_completed_access', [
+            'event' => 'subscription.completed', 'created_at' => now()->timestamp,
+            'payload' => ['subscription' => ['entity' => ['id' => 'sub_completed_access', 'current_end' => $periodEnd->timestamp]]],
+        ])->assertNoContent();
+
+        $this->context->set($tenant);
+        $billing = app(BillingService::class);
+        $this->assertSame('completed', DB::table('tenant_subscriptions')->where('id', $subscription->id)->value('status'));
+        $this->assertTrue($billing->canWrite($tenant));
+        $this->actingAs($user)->withSession(['current_tenant_id' => $tenant->id])->get(route('billing.index'))
+            ->assertOk()->assertSee('Completed (access through period end)')->assertSee('Access through');
+
+        $subscription->refresh()->update(['current_period_ends_at' => now()->subSecond()]);
+        $this->assertFalse($billing->canWrite($tenant));
+        $this->actingAs($user)->withSession(['current_tenant_id' => $tenant->id])->get(route('billing.index'))
+            ->assertOk()->assertSee('Completed')->assertSee('This workspace is read-only');
+    }
+
     public function test_invoice_limit_redirects_to_billing_when_reached(): void
     {
         [$tenant, $user] = $this->workspace('Limited', 'limited@example.test', now()->addDays(10), 0);
@@ -217,10 +266,12 @@ class BillingFeatureTest extends TestCase
         $updatedSubscription = DB::table('tenant_subscriptions')->where('id', $subscription->id)->first();
         $this->assertSame('past_due', $updatedSubscription->status);
         $this->assertNotNull($updatedSubscription->grace_ends_at);
-
         $this->context->set($tenant);
+        $this->assertFalse(app(BillingService::class)->canStartCheckout($tenant));
+
         $subscription->refresh()->update(['grace_ends_at' => now()->subSecond()]);
         $this->assertFalse(app(BillingService::class)->canWrite($tenant));
+        $this->assertTrue(app(BillingService::class)->canStartCheckout($tenant));
     }
 
     public function test_webhook_subscription_lookup_overrides_an_unrelated_active_tenant_context(): void

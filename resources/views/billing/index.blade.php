@@ -13,7 +13,7 @@
     @if($subscription)
         <p><strong>{{ $subscription->plan?->name ?? 'Plan' }}</strong> · {{ $statusLabel }}</p>
         @if($subscription->status === 'trialing')<p>Trial ends: {{ $subscription->trial_ends_at?->toDayDateTimeString() ?? 'Not set' }}</p>@endif
-        @if($subscription->current_period_ends_at)<p>{{ $subscription->status === 'cancelled' ? 'Access through' : 'Next renewal' }}: {{ $subscription->current_period_ends_at->toDayDateTimeString() }}</p>@endif
+        @if($subscription->current_period_ends_at)<p>{{ in_array($subscription->status, ['cancelled', 'completed'], true) ? 'Access through' : 'Next renewal' }}: {{ $subscription->current_period_ends_at->toDayDateTimeString() }}</p>@endif
         @if($subscription->status === 'past_due' && $subscription->grace_ends_at)<p>Grace period ends: {{ $subscription->grace_ends_at->toDayDateTimeString() }}</p>@endif
         <p>Invoices this month: {{ $usage['invoices'] }}{{ $subscription->plan?->monthly_invoice_limit !== null ? ' / '.$subscription->plan->monthly_invoice_limit : '' }}</p>
         <p>Members: {{ $usage['members'] }}{{ $subscription->plan?->member_limit !== null ? ' / '.$subscription->plan->member_limit : '' }}</p>

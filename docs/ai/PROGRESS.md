@@ -6,7 +6,7 @@
 - **Status:** Local demo catalog and grace assumptions are loaded; production billing still awaits approved prices, limits, seller tax identity/treatment, grace duration, and downgrade/proration/refund decisions.
 - **Code changes:** Phase 4 plan/subscription/payment/invoice/event schema, 14-day trials, usage/read-only middleware, Razorpay checkout/webhook services, billing page/history/PDF, and tests, plus completed Phases 1-3.
 - **Migration state:** Phase 4 migrations applied to local MySQL and the separate `invoiceiq_test` database.
-- **Automated tests:** `php vendor/bin/phpunit` passes: 21 tests, 143 assertions on MySQL.
+- **Automated tests:** `php vendor/bin/phpunit` passes: 23 tests, 166 assertions on MySQL.
 
 ## Completed
 
@@ -38,6 +38,9 @@
 - Fixed `payment.failed` webhooks to move established subscriptions into `past_due` with the configured grace window; initial pending checkout subscriptions remain pending.
 - Updated billing status labels and read-only/overdue notices to match trial, subscription-period, and grace enforcement.
 - Prevented out-of-order provider events from regressing subscription state by storing the latest processed provider state timestamp; stale events still record their payment history.
+- Enabled replacement checkout after a configured past-due grace period expires, while preventing overlapping checkout during active grace access.
+- Verified cancelled subscriptions retain writes through the provider period end and switch to read-only afterward; billing labels show the access-through date.
+- Preserved the provider's final period end on `subscription.completed`, kept `completed` distinct from `cancelled`, and verified read-only enforcement after that date.
 
 ## In progress / next
 

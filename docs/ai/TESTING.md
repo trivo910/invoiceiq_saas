@@ -13,7 +13,7 @@ PHPUnit 11 is a development dependency. Phase 3 added MySQL-backed two-tenant fe
 - Invoice numbering concurrency/financial-year boundaries and unchanged GST calculation regression cases.
 - Subscription limits, grace/read-only state, Razorpay signature/idempotency/state transitions, and super-admin audit/impersonation.
 
-Phase 4 currently tests 14-day trial creation, trial expiry and read-only billing messaging, invoice limits, feature entitlements, Razorpay checkout configuration and provider-plan matching, invalid/valid webhook signatures, event replay and out-of-order state protection, successful capture/tax invoice generation, failed renewal history and `past_due` grace enforcement without invoice issuance, correct tenant assignment when webhook context differs, demo catalog labeling/checkout/invoice guards, billing PDF tenant binding, and the Phase 3 tenant isolation suite. Full suite: `php vendor/bin/phpunit` (21 tests, 143 assertions).
+Phase 4 currently tests 14-day trial creation, trial expiry and read-only billing messaging, cancellation/completion access through provider period end, invoice limits, feature entitlements, Razorpay checkout configuration and provider-plan matching, invalid/valid webhook signatures, event replay and out-of-order state protection, successful capture/tax invoice generation, failed renewal history and `past_due` grace enforcement without invoice issuance, replacement checkout eligibility after grace expiration, correct tenant assignment when webhook context differs, demo catalog labeling/checkout/invoice guards, billing PDF tenant binding, and the Phase 3 tenant isolation suite. Full suite: `php vendor/bin/phpunit` (23 tests, 166 assertions).
 
 ## Commands
 

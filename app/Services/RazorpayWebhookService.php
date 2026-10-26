@@ -75,8 +75,14 @@ class RazorpayWebhookService
                     $endsAt = isset($subscriptionData['current_end']) ? now()->setTimestamp((int) $subscriptionData['current_end']) : $subscription->current_period_ends_at;
                     $subscription->update(['status' => 'cancelled', 'current_period_ends_at' => $endsAt, 'ended_at' => $endsAt && $endsAt->isPast() ? now() : null]);
                 } elseif (! $staleStateEvent && $event === 'subscription.completed') {
-                    $endsAt = $subscription->current_period_ends_at;
-                    $subscription->update(['status' => 'cancelled', 'ended_at' => $endsAt && $endsAt->isFuture() ? $endsAt : now()]);
+                    $endsAt = isset($subscriptionData['current_end'])
+                        ? now()->setTimestamp((int) $subscriptionData['current_end'])
+                        : $subscription->current_period_ends_at;
+                    $subscription->update([
+                        'status' => 'completed',
+                        'current_period_ends_at' => $endsAt,
+                        'ended_at' => $endsAt && $endsAt->isFuture() ? $endsAt : now(),
+                    ]);
                 }
                 if (! $staleStateEvent && $providerEventAt && in_array($event, $stateEvents, true)) {
                     $subscription->update(['provider_state_at' => $providerEventAt]);

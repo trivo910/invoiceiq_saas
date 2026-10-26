@@ -27,6 +27,7 @@ class BillingService
             // If no grace policy has been configured, keep access until the product decision is supplied.
             'past_due' => $subscription->grace_ends_at?->isFuture() ?? true,
             'cancelled' => $subscription->current_period_ends_at?->isFuture() ?? false,
+            'completed' => $subscription->current_period_ends_at?->isFuture() ?? false,
             default => false,
         };
     }
@@ -35,6 +36,7 @@ class BillingService
     {
         $subscription = $this->subscription($tenant);
         if (! $subscription || $subscription->plan?->code === 'legacy' || $subscription->status === 'trialing') return true;
+        if ($subscription->status === 'past_due') return ! $this->canWrite($tenant);
         return in_array($subscription->status, ['expired', 'cancelled', 'completed'], true)
             && ! $subscription->current_period_ends_at?->isFuture();
     }
