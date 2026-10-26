@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Customer;
 use Illuminate\Http\Request;
+use App\Support\DashboardCache;
 
 class CustomerController extends Controller
 {
@@ -43,6 +44,7 @@ class CustomerController extends Controller
         ]);
 
         $customer = Customer::create($data);
+        DashboardCache::forget();
 
         if ($request->wantsJson()) {
             return response()->json($customer);
@@ -69,6 +71,7 @@ class CustomerController extends Controller
         ]);
 
         $customer->update($data);
+        DashboardCache::forget();
 
         if ($request->wantsJson()) {
             return response()->json($customer);
@@ -80,6 +83,7 @@ class CustomerController extends Controller
     public function destroy(Customer $customer)
     {
         $customer->delete();
+        DashboardCache::forget();
         return redirect()->route('customers.index')->with('success', 'Customer deleted.');
     }
 

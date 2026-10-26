@@ -7,6 +7,8 @@ use App\Models\Invoice;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use App\Support\DashboardCache;
+use App\Support\TenantContext;
 
 class DashboardController extends Controller
 {
@@ -14,7 +16,9 @@ class DashboardController extends Controller
     {
         // Collapse 7 separate queries into 2 using conditional aggregation.
         // Cache for 5 minutes — stats don't need to be real-time.
-        $stats = Cache::remember('dashboard.stats', 300, function () {
+        $tenantId = app(TenantContext::class)->id();
+        abort_unless($tenantId, 403);
+        $stats = Cache::remember(DashboardCache::key(), 300, function () use ($tenantId) {
             $agg = DB::selectOne("
                 SELECT
                     SUM(grand_total)                                                   AS total_invoiced,
@@ -24,7 +28,8 @@ class DashboardController extends Controller
                     COUNT(*)                                                            AS invoice_count,
                     SUM(CASE WHEN status = 'draft'  THEN 1         ELSE 0 END) AS draft_count
                 FROM invoices
-            ");
+                WHERE tenant_id = ?
+            ", [$tenantId]);
 
             return [
                 'total_invoiced'    => $agg->total_invoiced    ?? 0,

@@ -7,10 +7,20 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\Concerns\BelongsToTenant;
 use App\Services\InvoiceNumberingService;
+use Illuminate\Validation\ValidationException;
 
 class Invoice extends Model
 {
     use BelongsToTenant;
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $invoice): void {
+            if ($invoice->customer_id && ! Customer::whereKey($invoice->customer_id)->exists()) {
+                throw ValidationException::withMessages(['customer_id' => 'The selected customer is not available in this workspace.']);
+            }
+        });
+    }
 
     protected $fillable = [
         'number', 'status', 'invoice_date', 'due_date',

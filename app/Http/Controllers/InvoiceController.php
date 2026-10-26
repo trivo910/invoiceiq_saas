@@ -8,12 +8,12 @@ use App\Models\InvoiceItem;
 use App\Models\Customer;
 use App\Models\Payment;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
 use Illuminate\Validation\Rule;
 use App\Support\TenantContext;
+use App\Support\DashboardCache;
 
 class InvoiceController extends Controller
 {
@@ -65,8 +65,10 @@ class InvoiceController extends Controller
             'number'           => ['required', Rule::unique('invoices', 'number')->where('tenant_id', app(TenantContext::class)->id())],
             'invoice_date'     => 'required|date',
             'customer_name'    => 'required|string',
+            'customer_id'      => ['nullable', 'integer', Rule::exists('customers', 'id')->where('tenant_id', app(TenantContext::class)->id())],
             'rows'             => 'required|array|min:1',
             'rows.*.item_name' => 'required|string',
+            'rows.*.item_id'   => ['nullable', 'integer', Rule::exists('items', 'id')->where('tenant_id', app(TenantContext::class)->id())],
             'rows.*.qty'       => 'required|numeric|min:0.001',
             'rows.*.rate'      => 'required|numeric|min:0',
         ], array_merge(['customer_name.required' => 'Please select a customer.'], $this->rowMessages($request)));
@@ -91,7 +93,7 @@ class InvoiceController extends Controller
         }
         assert($invoice instanceof Invoice);
 
-        Cache::forget('dashboard.stats');
+        DashboardCache::forget();
 
         if ($request->boolean('send_email')) {
             return $this->handleEmailSend($request, $invoice, 'Invoice created and emailed to');
@@ -114,8 +116,10 @@ class InvoiceController extends Controller
             'number'           => ['required', Rule::unique('invoices', 'number')->ignore($invoice->id)->where('tenant_id', app(TenantContext::class)->id())],
             'invoice_date'     => 'required|date',
             'customer_name'    => 'required|string',
+            'customer_id'      => ['nullable', 'integer', Rule::exists('customers', 'id')->where('tenant_id', app(TenantContext::class)->id())],
             'rows'             => 'required|array|min:1',
             'rows.*.item_name' => 'required|string',
+            'rows.*.item_id'   => ['nullable', 'integer', Rule::exists('items', 'id')->where('tenant_id', app(TenantContext::class)->id())],
             'rows.*.qty'       => 'required|numeric|min:0.001',
             'rows.*.rate'      => 'required|numeric|min:0',
         ], array_merge(['customer_name.required' => 'Please select a customer.'], $this->rowMessages($request)));
@@ -127,7 +131,7 @@ class InvoiceController extends Controller
             $this->recalculate($invoice);
         });
 
-        Cache::forget('dashboard.stats');
+        DashboardCache::forget();
 
         if ($request->boolean('send_email')) {
             return $this->handleEmailSend($request, $invoice, 'Invoice updated and emailed to');
@@ -139,7 +143,7 @@ class InvoiceController extends Controller
     public function destroy(Invoice $invoice)
     {
         $invoice->delete();
-        Cache::forget('dashboard.stats');
+        DashboardCache::forget();
         return redirect()->route('invoices.index')->with('success', 'Invoice deleted.');
     }
 
@@ -147,7 +151,7 @@ class InvoiceController extends Controller
     {
         $request->validate(['status' => 'required|in:draft,sent,paid,partial,cancelled']);
         $invoice->update(['status' => $request->status]);
-        Cache::forget('dashboard.stats');
+        DashboardCache::forget();
         return back()->with('success', 'Status updated.');
     }
 
@@ -167,7 +171,7 @@ class InvoiceController extends Controller
         $status = $paid >= $invoice->grand_total ? 'paid' : 'partial';
         $invoice->update(['amount_paid' => $paid, 'status' => $status]);
 
-        Cache::forget('dashboard.stats');
+        DashboardCache::forget();
         return back()->with('success', 'Payment recorded.');
     }
 
@@ -193,7 +197,7 @@ class InvoiceController extends Controller
             $this->dispatchMail($invoice, $data, $settings);
             if ($invoice->status === 'draft') {
                 $invoice->update(['status' => 'sent']);
-                Cache::forget('dashboard.stats');
+                DashboardCache::forget();
             }
             return back()->with('success', "Invoice emailed to {$data['to_email']} successfully.");
         } catch (\Exception $e) {

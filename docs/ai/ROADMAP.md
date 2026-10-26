@@ -1,6 +1,6 @@
 # SaaS conversion roadmap
 
-Status after Phase 2: **Phases 1 and 2 complete; Phase 3 next**.
+Status after Phase 3: **Phases 1–3 complete; Phase 4 next**.
 
 ## Phase 0 — Documentation setup
 
@@ -25,10 +25,12 @@ Status after Phase 2: **Phases 1 and 2 complete; Phase 3 next**.
 - [x] Tenant-scoped invitations, membership role changes/removal, and Gate-based role checks.
 - [x] Add SMTP/log mail configuration and apply the auth/invitation migration on configured local MySQL.
 
-## Phase 3 — Isolation audit (not started)
+## Phase 3 — Isolation audit (complete)
 
-- [ ] Audit every controller, binding, AJAX endpoint, raw query, report, export, and file route.
-- [ ] Add tests proving tenant isolation across existing modules and GST reports.
+- [x] Scope dashboard aggregation/cache, invoice/customer/item/payment lookups and mutations, and joined GST reports to the active tenant.
+- [x] Validate invoice customer/item IDs and enforce same-tenant invoice line/payment links.
+- [x] Move tenant logos to private paths, migrate legacy public logo references, and serve through the authenticated tenant route.
+- [x] Add MySQL-backed feature coverage for dashboard/cache, search, route binding, cross-tenant writes/relations, GST reports/Excel export, and logos.
 
 ## Phase 4 — Plans and billing (not started)
 

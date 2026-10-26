@@ -2,7 +2,7 @@
 
 ## Current state
 
-PHPUnit 11 is a development dependency, but the repository scan found no `tests/` directory. No automated test coverage is claimed. Phase 1 migrations were applied to configured local MySQL and checked through migration status, schema/count inspection, route registration, and PHP syntax checks; automated tests were not run.
+PHPUnit 11 is a development dependency. Phase 3 added MySQL-backed two-tenant feature tests. Tests use a separate `invoiceiq_test` database configured in `phpunit.xml`; preserve the local `.env` DB host/user/password and do not point the test config at the development database.
 
 ## Target automated coverage
 
@@ -15,7 +15,17 @@ PHPUnit 11 is a development dependency, but the repository scan found no `tests/
 
 ## Commands
 
-After test infrastructure is created, expected command is `php artisan test` (or `vendor/bin/phpunit`). Confirm the project PHPUnit configuration and database setup before relying on this command. Run MySQL-specific migration/locking tests against MySQL; SQLite is not a substitute for MySQL locking or enum/DDL behavior.
+Create the empty test database once if needed, then migrate and run the suite:
+
+```powershell
+$env:APP_ENV = "testing"
+$env:DB_CONNECTION = "mysql"
+$env:DB_DATABASE = "invoiceiq_test"
+php artisan migrate --force
+php vendor/bin/phpunit
+```
+
+This repository does not include Laravel Collision, so `php artisan test` is unavailable; use PHPUnit directly. Run MySQL-specific migration/locking tests against MySQL; SQLite is not a substitute for MySQL locking or enum/DDL behavior.
 
 ## Manual QA by phase
 
@@ -24,7 +34,7 @@ After test infrastructure is created, expected command is `php artisan test` (or
 | 0 | Review all docs against code scan; no runtime behavior changed |
 | 1 | Upgrade populated legacy DB; confirm all records retained and attached to default tenant; numbering works concurrently |
 | 2 | Register/verify, onboard, invite members, exercise all roles |
-| 3 | Attempt cross-tenant reads/writes/search/reports/files and verify denial |
+| 3 | Automated MySQL coverage checks cross-tenant dashboard/cache, reads/writes, search, linked records, GST reports/Excel exports, and private logos; manually inspect a legacy logo migration |
 | 4 | Trial, checkout, webhook replay/failure, limit prompts, grace/read-only |
 | 5 | Guard separation, tenant actions, audit, impersonation start/exit |
 | 6 | Tenant branding/PDF, public token link, email, exports |

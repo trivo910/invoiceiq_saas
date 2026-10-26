@@ -108,7 +108,7 @@ Route::middleware(['auth', 'verified', 'tenant', 'onboarded'])->group(function (
         Route::post('settings/test-email', [SettingsController::class, 'testEmail'])->name('settings.test-email');
 
         Route::get('users', [UsersController::class, 'index'])->name('users.index');
-        Route::post('users', [UsersController::class, 'store'])->name('users.store');
+        Route::post('users', [UsersController::class, 'store'])->middleware('throttle:10,1')->name('users.store');
         Route::patch('users/{user}/role', [UsersController::class, 'updateRole'])->name('users.role');
         Route::delete('users/{user}', [UsersController::class, 'destroy'])->name('users.destroy');
     });

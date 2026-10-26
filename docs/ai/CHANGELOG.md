@@ -31,3 +31,9 @@ Added auth, verification, onboarding, and invitation controllers/views, `TenantI
 ### Phase 2 follow-up — local mail transport unavailable
 
 Registration reported an SMTP connection error because local `.env` selected `smtp` at `127.0.0.1:1025` without a server running. Mail transport failures now return actionable feedback for verification, reset, and invitation flows rather than a 500. The local `.env` mailer was switched to `log` and Laravel's config cache cleared; existing SMTP host/credential entries were left untouched. The account submitted before this fix may already exist and can sign in, then resend verification from the verification screen.
+
+## Phase 3 — 2026-10-23 — Isolation audit and tests
+
+Scoped dashboard raw aggregation to the active tenant and keyed dashboard caching/invalidation by tenant. Added tenant predicates and tenant equality checks to GST invoice-line joins. Invoice validation now scopes selected customers/items, and model guards reject cross-tenant invoice/customer, line/invoice/item, and payment/invoice links. Tenant logos now use private paths served through the authenticated tenant route; a command and lazy path migration move legacy public logos into tenant-private storage. The local data audit found zero cross-tenant links across the four relationship pairs.
+
+Added a dedicated MySQL PHPUnit configuration and seven feature tests with 55 assertions for dashboard/cache, customer/item search, route binding, tampered invoice writes, linked records, GST summaries/Excel export, private logo routes, and legacy logo migration. Created/migrated the isolated `invoiceiq_test` database; the development database was not refreshed. `php vendor/bin/phpunit` passes. `php artisan test` is not available because Laravel Collision is not installed.

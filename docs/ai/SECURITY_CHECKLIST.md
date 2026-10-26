@@ -4,25 +4,25 @@ Use this tick-box list during implementation and before release. Phase 0 records
 
 ## Tenant isolation
 
-- [ ] Every tenant model scopes and assigns `tenant_id`.
-- [ ] Raw SQL, query builder, joins, aggregates, caches, route binding, AJAX, exports, and PDFs include tenant context.
-- [ ] Tenant A cannot read, update, delete, enumerate, or infer Tenant B invoices, customers, items, payments, reports, or files.
-- [ ] Cross-tenant customer/item IDs are rejected when creating invoices.
+- [x] Every tenant model scopes and assigns `tenant_id`.
+- [x] Raw dashboard SQL, GST joins, cache keys, route binding, AJAX, reports/exports, PDFs, and authorized logo delivery include tenant context.
+- [x] Two-tenant tests cover cross-tenant reads, updates, payments, report output, exports, and logos.
+- [x] Cross-tenant customer/item IDs and invoice line/payment links are rejected.
 - [ ] Queued jobs and emails restore tenant context explicitly.
 
 ## Web and account security
 
-- [ ] CSRF remains enabled on state-changing web routes.
-- [ ] Login, registration, password reset, invite, webhook, and API endpoints have appropriate throttles.
-- [ ] Session ID rotates on login; logout invalidates session and CSRF token.
-- [ ] Email verification and password reset tokens use framework protections and expiry.
-- [ ] Role checks are enforced by policies/server-side authorization, not UI only.
+- [x] CSRF remains enabled on state-changing web routes.
+- [x] Login, registration, password reset, verification, invitation acceptance, and invitation creation are throttled; no webhook/API endpoints exist yet.
+- [x] Session ID rotates on login; logout invalidates session and CSRF token.
+- [x] Email verification and password reset tokens use framework protections and expiry.
+- [x] Role checks are enforced server-side through Gates and membership-aware middleware.
 
 ## Data and uploads
 
 - [ ] Validate GSTIN shape and state code server-side; normalize identifiers.
-- [ ] Validate uploaded content, MIME, size, and allowed image formats; use generated names and tenant-private paths.
-- [ ] Serve private files only through authorized tenant-scoped routes.
+- [x] Validate uploaded content, MIME, size, and allowed image formats; use generated names and tenant-private paths.
+- [x] Serve logos through an authenticated tenant-scoped route; migrate legacy public logos to private storage.
 - [ ] Protect secrets and webhook signatures; never log credentials, payment secrets, or full sensitive payloads.
 - [ ] Audit invoice create/edit/delete, role changes, billing events, impersonation, and super-admin actions.
 

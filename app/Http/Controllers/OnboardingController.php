@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\WorkspaceOnboardingService;
+use App\Services\TenantLogoStorage;
 use App\Support\TenantContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -38,7 +39,7 @@ class OnboardingController extends Controller
 
         $logoPath = $tenant->logo_path;
         if ($request->hasFile('logo')) {
-            $logoPath = $request->file('logo')->store('logos/tenant-'.$tenant->id, 'public');
+            $logoPath = app(TenantLogoStorage::class)->store($request->file('logo'), $tenant->id);
         }
         app(WorkspaceOnboardingService::class)->complete($tenant, $data, $logoPath);
 

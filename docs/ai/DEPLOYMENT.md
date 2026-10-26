@@ -6,6 +6,8 @@ Root `README.md` describes PHP 8.2+, Composer, `php artisan migrate --seed`, and
 
 Set `MAIL_MAILER=smtp`, `MAIL_HOST`, `MAIL_PORT`, optional `MAIL_USERNAME`/`MAIL_PASSWORD`, `MAIL_SCHEME` when needed, and `MAIL_FROM_ADDRESS`/`MAIL_FROM_NAME` for verification, password reset, and invitation delivery. The `log` mailer is suitable only for local development.
 
+After upgrading Phase 2 installations, run `php artisan tenants:migrate-legacy-logos` once to move any legacy public logo files and references into tenant-private storage. New onboarding and settings uploads already use private tenant paths.
+
 ## Target common requirements
 
 - Production database: MySQL with UTF-8 (`utf8mb4`); configure `.env`, `config/database.php`, and setup documentation together. The application now defaults to MySQL when `DB_CONNECTION` is omitted.

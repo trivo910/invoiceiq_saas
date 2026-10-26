@@ -10,6 +10,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Support\TenantContext;
 
 class GstReportController extends Controller
 {
@@ -137,6 +138,8 @@ class GstReportController extends Controller
     private function hsnSummary(string $from, string $to): array
     {
         $rows = InvoiceItem::join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
+            ->where('invoice_items.tenant_id', app(TenantContext::class)->id())
+            ->whereColumn('invoices.tenant_id', 'invoice_items.tenant_id')
             ->whereNotIn('invoices.status', ['draft', 'cancelled'])
             ->whereBetween('invoices.invoice_date', [$from, $to])
             ->select(
@@ -172,6 +175,8 @@ class GstReportController extends Controller
     private function taxLiability(string $from, string $to): array
     {
         $byRate = InvoiceItem::join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
+            ->where('invoice_items.tenant_id', app(TenantContext::class)->id())
+            ->whereColumn('invoices.tenant_id', 'invoice_items.tenant_id')
             ->whereNotIn('invoices.status', ['draft', 'cancelled'])
             ->whereBetween('invoices.invoice_date', [$from, $to])
             ->select(

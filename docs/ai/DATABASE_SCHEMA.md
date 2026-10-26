@@ -1,8 +1,8 @@
 # Database schema
 
-## Current schema through Phase 2
+## Current schema through Phase 3
 
-The following describes checked-in migrations after Phase 1. The local configured MySQL database was also inspected before and after migration; other deployed databases may differ and require their own preflight.
+The following describes checked-in migrations through Phase 2; Phase 3 changed application validation/storage behavior without adding schema. The local configured MySQL database was also inspected before and after migration; other deployed databases may differ and require their own preflight.
 
 | Table | Columns and relationships | Indexes/uniqueness |
 |---|---|---|
@@ -23,7 +23,7 @@ The following describes checked-in migrations after Phase 1. The local configure
 | `failed_jobs` | connection/queue/payload/exception/failure timestamp | unique uuid |
 | `migrations` | Laravel migration ledger | framework managed |
 
-Business tables `settings`, `customers`, `items`, `invoices`, `invoice_items`, and `payments` have non-null indexed tenant foreign keys with cascade delete. Existing relationships remain: invoice.customer_id → customers (null on delete); invoice_items.invoice_id → invoices (cascade), invoice_items.item_id → items (null on delete); payments.invoice_id → invoices (cascade). Application scope currently prevents ordinary cross-tenant model lookups; same-tenant consistency for linked IDs still needs Phase 3 audit and tests. GST reports are computed, not stored in report tables.
+Business tables `settings`, `customers`, `items`, `invoices`, `invoice_items`, and `payments` have non-null indexed tenant foreign keys with cascade delete. Existing relationships remain: invoice.customer_id → customers (null on delete); invoice_items.invoice_id → invoices (cascade), invoice_items.item_id → items (null on delete); payments.invoice_id → invoices (cascade). The schema does not have composite same-tenant foreign keys; model save guards and request validation enforce tenant matches for invoice customers, line invoice/items, and payments. GST reports are computed, not stored in report tables.
 
 ## Membership and ownership
 
@@ -37,7 +37,8 @@ Users remain global identity records. `tenant_user` supports multiple workspaces
 4. [x] Create per-tenant financial-year sequence rows; preserve historical invoice numbers.
 5. [x] Add database queue config and jobs/batches/failed-jobs tables for shared-host-compatible queuing.
 6. [x] Add onboarding state, mark migrated tenants complete and existing users verified to preserve their access, then add tenant invitations.
-7. [ ] Phase 3: tenant-aware raw-query/report indexes, linked-record validation, and isolation tests.
+7. [x] Phase 3: scope raw dashboard SQL and GST joins; validate linked records and private logo access; add two-tenant feature tests.
+8. [ ] Phase 4: plans, trials, usage limits, and billing.
 
 Migration files: `2026_10_23_000001_create_tenants_and_scope_business_data.php`, `2026_10_23_000002_create_database_queue_tables.php`, `2026_10_23_000003_add_tenant_scoped_customer_gstin_unique.php`, `2026_10_23_000004_add_phase_two_auth_and_invitations.php`.
 
@@ -46,3 +47,6 @@ Migration files: `2026_10_23_000001_create_tenants_and_scope_business_data.php`,
 On the configured local MySQL database before migration: 5 customers, 9 items, 1 user, 17 settings, 0 invoices, 0 invoice lines, 0 payments; no duplicate item codes, non-empty GSTINs, or invoice numbers and no orphaned invoice references. After migration, the five customers, nine items, 17 settings, and one user remain; all business rows have one tenant, the user has one membership, and all three queue tables exist. Other installations must back up and resolve duplicate customer GSTINs before applying the unique index.
 
 New generated invoice numbers use `PREFIX-YYYY-YY-NNNN` (for example `INV-2026-27-0001`) based on the tenant's configured FY start. Existing invoice numbers are not rewritten. SQLite is not the production database target; the migration and locking behavior were exercised against the configured local MySQL only.
+
+
+Phase 3 introduced no schema migration. Feature tests run against a separate MySQL database named invoiceiq_test; the local development database is not used by the suite. The checked local data audit found zero cross-tenant invoice/customer, line/invoice, line/item, or payment/invoice links.

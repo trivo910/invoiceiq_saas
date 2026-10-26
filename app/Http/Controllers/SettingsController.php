@@ -5,8 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Mail\Mailable;
-use Illuminate\Support\Facades\Storage;
 use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
+use App\Services\TenantLogoStorage;
+use App\Support\TenantContext;
 
 class SettingsController extends Controller
 {
@@ -66,45 +67,38 @@ class SettingsController extends Controller
     {
         $request->validate(['company_logo' => 'required|image|mimes:jpeg,png,gif|max:2048']);
 
+        $tenantId = app(TenantContext::class)->id();
+        abort_unless($tenantId, 403);
+        $storage = app(TenantLogoStorage::class);
         $existing = Setting::get('company_logo');
-        if ($existing) {
-            Storage::disk('public')->delete($existing);
-        }
-
-        // Derive extension from actual MIME type, not the client-supplied filename
-        $ext  = match ($request->file('company_logo')->getMimeType()) {
-            'image/png' => 'png',
-            'image/gif' => 'gif',
-            default     => 'jpg',
-        };
-        $path = $request->file('company_logo')->storeAs('logos', 'company_logo.' . $ext, 'public');
+        $path = $storage->store($request->file('company_logo'), $tenantId);
         Setting::set('company_logo', $path);
+        \App\Models\Tenant::whereKey($tenantId)->update(['logo_path' => $path]);
+        $storage->delete($existing, $tenantId);
 
         return redirect()->route('settings.index')->with('success', 'Logo uploaded successfully.');
     }
 
     public function removeLogo()
     {
+        $tenantId = app(TenantContext::class)->id();
+        abort_unless($tenantId, 403);
         $path = Setting::get('company_logo');
-        if ($path) {
-            Storage::disk('public')->delete($path);
-        }
+        app(TenantLogoStorage::class)->delete($path, $tenantId);
         Setting::set('company_logo', '');
+        \App\Models\Tenant::whereKey($tenantId)->update(['logo_path' => null]);
         return redirect()->route('settings.index')->with('success', 'Logo removed.');
     }
 
     public function logoImage()
     {
         $path = Setting::get('company_logo');
-        if (!$path) abort(404);
+        $contents = app(TenantLogoStorage::class)->contents($path, (int) app(TenantContext::class)->id());
+        if ($contents === null) abort(404);
 
-        $fullPath = storage_path('app/public/' . $path);
-        if (!file_exists($fullPath)) abort(404);
-
-        $ext  = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
+        $ext  = strtolower(pathinfo($path, PATHINFO_EXTENSION));
         $mime = match ($ext) { 'png' => 'image/png', 'gif' => 'image/gif', default => 'image/jpeg' };
-
-        return response()->file($fullPath, ['Content-Type' => $mime, 'Cache-Control' => 'max-age=3600']);
+        return response($contents, 200, ['Content-Type' => $mime, 'Cache-Control' => 'private, max-age=300', 'X-Content-Type-Options' => 'nosniff']);
     }
 
     public function testEmail(Request $request): \Illuminate\Http\JsonResponse
@@ -158,14 +152,16 @@ class SettingsController extends Controller
     {
         $logoPath = $settings['company_logo'] ?? '';
         if (!$logoPath) return null;
-        $fullPath = storage_path('app/public/' . $logoPath);
-        if (!file_exists($fullPath)) return null;
-        $ext  = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
+        $tenantId = app(TenantContext::class)->id();
+        if (! $tenantId) return null;
+        $contents = app(TenantLogoStorage::class)->contents($logoPath, $tenantId);
+        if ($contents === null) return null;
+        $ext  = strtolower(pathinfo($logoPath, PATHINFO_EXTENSION));
         $mime = match ($ext) {
             'png'   => 'image/png',
             'gif'   => 'image/gif',
             default => 'image/jpeg',
         };
-        return 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($fullPath));
+        return 'data:' . $mime . ';base64,' . base64_encode($contents);
     }
 }

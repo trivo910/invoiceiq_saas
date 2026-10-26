@@ -24,7 +24,9 @@
 
 # ── Testing ────────────────────────────────────────────────────
 /.phpunit.cache/
+/.phpunit.result.cache
 /coverage/
+/storage/app/tenants/
 
 # ── IDE & editors ──────────────────────────────────────────────
 .idea/

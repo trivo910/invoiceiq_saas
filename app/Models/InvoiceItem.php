@@ -5,10 +5,23 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\Concerns\BelongsToTenant;
+use Illuminate\Validation\ValidationException;
 
 class InvoiceItem extends Model
 {
     use BelongsToTenant;
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $line): void {
+            if (! Invoice::whereKey($line->invoice_id)->exists()) {
+                throw ValidationException::withMessages(['invoice_id' => 'The selected invoice is not available in this workspace.']);
+            }
+            if ($line->item_id && ! Item::whereKey($line->item_id)->exists()) {
+                throw ValidationException::withMessages(['item_id' => 'The selected item is not available in this workspace.']);
+            }
+        });
+    }
 
     protected $fillable = [
         'invoice_id', 'item_id', 'sort_order',

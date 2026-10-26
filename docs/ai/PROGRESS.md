@@ -2,11 +2,11 @@
 
 ## Current position
 
-- **Phase:** 2 — Auth and onboarding
-- **Status:** Complete; ready for Phase 3.
-- **Code changes:** Tenant registration and verification, password recovery, workspace onboarding, invitations, tenant membership roles/Gates, mail configuration, plus prior Phase 1 tenancy changes.
-- **Migration state:** All four Phase 1/2 migrations applied successfully to the configured local MySQL database.
-- **Automated tests:** Not run; no `tests/` directory exists.
+- **Phase:** 3 — Isolation audit and tests
+- **Status:** Complete; ready for Phase 4.
+- **Code changes:** Tenant-scoped dashboard/report queries and cache, same-tenant relationship validation, private tenant logo storage/migration, and MySQL isolation tests, plus prior phases.
+- **Migration state:** No Phase 3 schema migration. Phase 1/2 migrations applied to local MySQL; the separate `invoiceiq_test` database is migrated for tests.
+- **Automated tests:** `php vendor/bin/phpunit` passes: 7 tests, 55 assertions on MySQL.
 
 ## Completed
 
@@ -25,22 +25,23 @@
 - Replaced global user CRUD with tenant-scoped invitations, roles, membership updates/removal, and Gates for workspace/record permissions.
 - Added SMTP/log mail configuration, updated setup/environment/docs, applied Phase 2 migration, syntax-checked changed PHP files, and confirmed all routes register.
 - Handled local SMTP transport failures without turning registration/reset/invitation requests into 500s; switched this development environment to the configured log mailer after confirming the unavailable `127.0.0.1:1025` transport.
+- Audited raw SQL, joins, route binding, search, CRUD, reports, exports, cache, PDFs, mail, and file paths; scoped dashboard SQL/cache and GST joins; added customer/item/invoice/line/payment same-tenant guards.
+- Moved new logos to private tenant storage and added a command to migrate legacy public logo paths; feature tests cover two-tenant reads, writes, searches, reports, Excel exports, linked records, and logo access.
+- Created and migrated the isolated MySQL `invoiceiq_test` database; PHPUnit passes 7 tests and 55 assertions. Read-only audit found zero cross-tenant links in local invoice/customer, line/invoice, line/item, and payment/invoice relationships.
 
 ## In progress / next
 
-1. Phase 3: audit tenant isolation in raw queries, reports, linked records, exports, cache keys and file routes; add isolation tests.
-2. Before deploying to any other installation, back up its database, preflight actual legacy data/migration drift, then rehearse migrations on staging.
+1. Phase 4: plans, trials, usage limits, and billing.
+2. Before deploying to another installation, back up its database, preflight actual legacy data/migration drift, then rehearse migrations on staging.
 
 ## Known issues and cautions
 
-- Dashboard raw SQL/global cache and GST report raw joins still require tenant predicates/cache-key isolation in Phase 3.
-- Same-tenant links between invoice/customer/item/payment foreign keys need an isolation audit and tests.
-- Only the configured local MySQL dataset was inspected; it had no invoices or payments. Other installations with invoice history need preflight and backup before migration.
-- Workspace selection is session-based and defaults to the lowest-ID membership; a full workspace switcher remains future work.
-- Email delivery defaults to the `log` mailer; production must configure working SMTP credentials and sender identity.
-- Dashboard cache invalidation remains global until Phase 3; this affects cache efficiency, and reports/dashboard raw SQL are not yet proven tenant-isolated.
-- Invoice numbering, tenant scopes, and migrations were verified only against configured local MySQL. No automated isolation/concurrency test suite exists yet.
+- Only the configured local MySQL business dataset was inspected; it had no invoices or payments. Other installations with invoice history need backup and preflight.
+- Same-tenant relationships are enforced by application validation/model hooks; the schema does not yet have composite tenant foreign keys.
+- A full workspace switcher and tenant-aware queued business jobs remain later work.
+- Email delivery defaults to the `log` mailer; production must configure SMTP credentials and sender identity.
+- Legacy public logos should be moved after upgrade with `php artisan tenants:migrate-legacy-logos`.
 
 ## Resume point
 
-Read `README.md`, this file, `TENANCY_RULES.md`, `CODING_STANDARDS.md`, `DATABASE_SCHEMA.md`, and `ROADMAP.md`. Phases 1 and 2 are complete. Continue with Phase 3 only when requested; migrate other installations only after backup, preflight, and staging rehearsal.
+Read `README.md`, this file, `TENANCY_RULES.md`, `CODING_STANDARDS.md`, `DATABASE_SCHEMA.md`, and `ROADMAP.md`. Phases 1–3 are complete. Continue with Phase 4 only when requested; migrate other installations only after backup, preflight, and staging rehearsal.
