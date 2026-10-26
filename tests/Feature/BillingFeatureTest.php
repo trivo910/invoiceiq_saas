@@ -49,7 +49,8 @@ class BillingFeatureTest extends TestCase
     public function test_expired_trial_keeps_reads_but_blocks_writes(): void
     {
         [$tenant, $user] = $this->workspace('Expired Trial', 'expired@example.test', now()->subMinute(), null);
-        $this->actingAs($user)->withSession(['current_tenant_id' => $tenant->id])->get(route('billing.index'))->assertOk();
+        $this->actingAs($user)->withSession(['current_tenant_id' => $tenant->id])->get(route('billing.index'))
+            ->assertOk()->assertSee('Trial expired')->assertSee('This workspace is read-only');
         $this->actingAs($user)->withSession(['current_tenant_id' => $tenant->id])->post(route('invoices.store'), [])->assertRedirect(route('billing.index'))->assertSessionHas('billing_read_only');
     }
 

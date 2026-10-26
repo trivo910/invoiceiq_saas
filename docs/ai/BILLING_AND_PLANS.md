@@ -34,7 +34,7 @@ Data is never removed when a subscription expires or fails. The billing page and
 
 ## Billing UI and operations
 
-The billing page shows the current plan/status, trial or renewal date, usage, configured plan choices, payment history, and private tenant-scoped invoice PDF downloads. Upgrade checkout is available only where a plan and provider configuration are complete. Downgrade, active subscription changes, cancellation requests, proration, and refunds remain unavailable until product decisions exist.
+The billing page shows the current plan/status, trial or renewal date, usage, configured plan choices, payment history, and private tenant-scoped invoice PDF downloads. Status and read-only messaging follow the same trial/period/grace rules as write middleware, so an expired trial or period does not continue to appear active. Upgrade checkout is available only where a plan and provider configuration are complete. Downgrade, active subscription changes, cancellation requests, proration, and refunds remain unavailable until product decisions exist.
 
 Subscription invoice PDFs are issued only when seller name, GSTIN, PAN, address, state code, GST rate, SAC, tax mode are configured, and the tenant has a state code. The invoice gross equals the amount actually captured; inclusive mode derives the taxable subtotal from that gross, while exclusive mode uses the catalog base price. Same-state invoices split GST into CGST/SGST; other-state invoices show IGST. Seller/buyer details are snapshotted at issue time. Configure the correct seller/tax treatment for the actual SaaS entity before enabling this in production.
 

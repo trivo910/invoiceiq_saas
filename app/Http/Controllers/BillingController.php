@@ -16,9 +16,19 @@ class BillingController extends Controller
     {
         $tenant = $context->current();
         $subscription = $billing->subscription($tenant);
+        $canWrite = $billing->canWrite($tenant);
+        $statusLabel = match ($subscription?->status) {
+            'trialing' => $subscription->trial_ends_at?->isFuture() ? 'Trial' : 'Trial expired',
+            'active' => ($subscription->current_period_ends_at?->isFuture() ?? true) ? 'Active' : 'Subscription ended',
+            'past_due' => ($subscription->grace_ends_at?->isFuture() ?? true) ? 'Past due' : 'Payment overdue',
+            'cancelled' => $subscription->current_period_ends_at?->isFuture() ? 'Cancelled (access through period end)' : 'Cancelled',
+            default => $subscription ? ucfirst(str_replace('_', ' ', $subscription->status)) : null,
+        };
         $plans = Plan::where('is_active', true)->orderBy('sort_order')->get();
         return view('billing.index', [
             'subscription' => $subscription,
+            'statusLabel' => $statusLabel,
+            'canWrite' => $canWrite,
             'plans' => $plans,
             'usage' => $billing->usage($tenant),
             'payments' => BillingPayment::latest()->limit(25)->get(),

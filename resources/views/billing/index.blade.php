@@ -6,12 +6,14 @@
 @if(session('billing_limit'))<div class="flash flash-warning">{{ session('billing_limit') }}</div>@endif
 @if(session('billing_read_only'))<div class="flash flash-error">{{ session('billing_read_only') }}</div>@endif
 @if(session('billing_feature'))<div class="flash flash-warning">{{ session('billing_feature') }}</div>@endif
+@if(! $canWrite)<div class="flash flash-error">This workspace is read-only. Your existing invoices and data remain available. Review billing options below to restore write access.</div>
+@elseif($subscription?->status === 'past_due')<div class="flash flash-warning">Payment is overdue. Write access remains available until the grace period ends{{ $subscription->grace_ends_at ? ' on '.$subscription->grace_ends_at->toDayDateTimeString() : '' }}.</div>@endif
 <section class="card" style="padding:20px;margin-bottom:20px">
     <h2 style="margin-top:0">Current plan</h2>
     @if($subscription)
-        <p><strong>{{ $subscription->plan?->name ?? 'Plan' }}</strong> · {{ ucfirst(str_replace('_', ' ', $subscription->status)) }}</p>
+        <p><strong>{{ $subscription->plan?->name ?? 'Plan' }}</strong> · {{ $statusLabel }}</p>
         @if($subscription->status === 'trialing')<p>Trial ends: {{ $subscription->trial_ends_at?->toDayDateTimeString() ?? 'Not set' }}</p>@endif
-        @if($subscription->current_period_ends_at)<p>Next renewal: {{ $subscription->current_period_ends_at->toDayDateTimeString() }}</p>@endif
+        @if($subscription->current_period_ends_at)<p>{{ $subscription->status === 'cancelled' ? 'Access through' : 'Next renewal' }}: {{ $subscription->current_period_ends_at->toDayDateTimeString() }}</p>@endif
         @if($subscription->status === 'past_due' && $subscription->grace_ends_at)<p>Grace period ends: {{ $subscription->grace_ends_at->toDayDateTimeString() }}</p>@endif
         <p>Invoices this month: {{ $usage['invoices'] }}{{ $subscription->plan?->monthly_invoice_limit !== null ? ' / '.$subscription->plan->monthly_invoice_limit : '' }}</p>
         <p>Members: {{ $usage['members'] }}{{ $subscription->plan?->member_limit !== null ? ' / '.$subscription->plan->member_limit : '' }}</p>
