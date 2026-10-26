@@ -13,7 +13,11 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\UsersController;
+use App\Http\Controllers\BillingController;
+use App\Http\Controllers\RazorpayWebhookController;
 use Illuminate\Support\Facades\Route;
+
+Route::post('/webhooks/razorpay', RazorpayWebhookController::class)->middleware('throttle:120,1')->name('billing.webhook');
 
 // ── Guest-only (redirects authenticated users to /) ────────────
 Route::middleware('guest')->group(function () {
@@ -34,7 +38,14 @@ Route::middleware(['auth', 'tenant'])->group(function () {
     Route::get('/email/verify/{id}/{hash}', [VerificationController::class, 'verify'])->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
     Route::post('/email/verification-notification', [VerificationController::class, 'resend'])->middleware('throttle:6,1')->name('verification.send');
     Route::get('/onboarding', [OnboardingController::class, 'show'])->name('onboarding.show');
-    Route::post('/onboarding', [OnboardingController::class, 'store'])->middleware('verified')->name('onboarding.store');
+    Route::post('/onboarding', [OnboardingController::class, 'store'])->middleware(['verified', 'subscription'])->name('onboarding.store');
+});
+
+Route::middleware(['auth', 'verified', 'tenant'])->group(function () {
+    Route::get('/billing', [BillingController::class, 'index'])->name('billing.index');
+    Route::post('/billing/plans/{plan}/checkout', [BillingController::class, 'checkout'])
+        ->middleware(['role:owner,admin', 'throttle:10,1'])->name('billing.checkout');
+    Route::get('/billing/invoices/{invoice}/download', [BillingController::class, 'invoice'])->name('billing.invoices.download');
 });
 
 Route::post('/logout', [LoginController::class, 'destroy'])
@@ -57,9 +68,9 @@ Route::middleware(['auth', 'verified', 'tenant', 'onboarded'])->group(function (
     Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('invoices.pdf');
 
     // Write (admin + staff)
-    Route::middleware('can:write-records')->group(function () {
+    Route::middleware(['can:write-records', 'subscription'])->group(function () {
         Route::get('invoices/create', [InvoiceController::class, 'create'])->name('invoices.create');
-        Route::post('invoices', [InvoiceController::class, 'store'])->name('invoices.store');
+        Route::post('invoices', [InvoiceController::class, 'store'])->middleware('plan.limit:invoices')->name('invoices.store');
         Route::get('invoices/{invoice}/edit', [InvoiceController::class, 'edit'])->name('invoices.edit');
         Route::put('invoices/{invoice}', [InvoiceController::class, 'update'])->name('invoices.update');
         Route::delete('invoices/{invoice}', [InvoiceController::class, 'destroy'])->middleware('can:delete-records')->name('invoices.destroy');
@@ -76,7 +87,7 @@ Route::middleware(['auth', 'verified', 'tenant', 'onboarded'])->group(function (
     Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');
 
     // Write
-    Route::middleware('can:write-records')->group(function () {
+    Route::middleware(['can:write-records', 'subscription'])->group(function () {
         Route::post('customers', [CustomerController::class, 'store'])->name('customers.store');
         Route::put('customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
         Route::delete('customers/{customer}', [CustomerController::class, 'destroy'])->middleware('can:delete-records')->name('customers.destroy');
@@ -86,7 +97,7 @@ Route::middleware(['auth', 'verified', 'tenant', 'onboarded'])->group(function (
     Route::get('items/search', [ItemController::class, 'search'])->name('items.search');
     Route::get('items', [ItemController::class, 'index'])->name('items.index');
 
-    Route::middleware('can:write-records')->group(function () {
+    Route::middleware(['can:write-records', 'subscription'])->group(function () {
         Route::post('items', [ItemController::class, 'store'])->name('items.store');
         Route::put('items/{item}', [ItemController::class, 'update'])->name('items.update');
         Route::delete('items/{item}', [ItemController::class, 'destroy'])->middleware('can:delete-records')->name('items.destroy');
@@ -96,11 +107,11 @@ Route::middleware(['auth', 'verified', 'tenant', 'onboarded'])->group(function (
     Route::get('settings/logo/image', [SettingsController::class, 'logoImage'])->name('settings.logo.image');
 
     // ── Reports (all roles) ────────────────────────────────────
-    Route::get('reports/gst', [GstReportController::class, 'index'])->name('reports.gst');
-    Route::get('reports/gst/export', [GstReportController::class, 'export'])->name('reports.gst.export');
+    Route::get('reports/gst', [GstReportController::class, 'index'])->middleware('plan.feature:gst_reports')->name('reports.gst');
+    Route::get('reports/gst/export', [GstReportController::class, 'export'])->middleware('plan.feature:gst_reports')->name('reports.gst.export');
 
     // ── Admin-only ─────────────────────────────────────────────
-    Route::middleware('role:owner,admin')->group(function () {
+    Route::middleware(['role:owner,admin', 'subscription'])->group(function () {
         Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');
         Route::post('settings', [SettingsController::class, 'update'])->name('settings.update');
         Route::post('settings/logo', [SettingsController::class, 'uploadLogo'])->name('settings.logo.upload');
@@ -108,7 +119,7 @@ Route::middleware(['auth', 'verified', 'tenant', 'onboarded'])->group(function (
         Route::post('settings/test-email', [SettingsController::class, 'testEmail'])->name('settings.test-email');
 
         Route::get('users', [UsersController::class, 'index'])->name('users.index');
-        Route::post('users', [UsersController::class, 'store'])->middleware('throttle:10,1')->name('users.store');
+        Route::post('users', [UsersController::class, 'store'])->middleware(['throttle:10,1', 'subscription', 'plan.limit:members'])->name('users.store');
         Route::patch('users/{user}/role', [UsersController::class, 'updateRole'])->name('users.role');
         Route::delete('users/{user}', [UsersController::class, 'destroy'])->name('users.destroy');
     });

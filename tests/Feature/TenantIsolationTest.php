@@ -7,6 +7,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Item;
 use App\Models\Payment;
+use App\Models\Plan;
 use App\Models\Setting;
 use App\Models\Tenant;
 use App\Models\User;
@@ -221,6 +222,10 @@ class TenantIsolationTest extends TestCase
         $tenant->users()->attach($user->id, ['role' => 'owner']);
 
         $this->context->set($tenant);
+        $tenant->subscriptions()->create([
+            'plan_id' => Plan::where('code', 'trial')->value('id'), 'status' => 'trialing',
+            'trial_ends_at' => now()->addDays(14),
+        ]);
         $customer = Customer::create(['name' => 'Shared customer', 'email' => $email, 'gstin' => '27ABCDE1234F1Z5']);
         $item = Item::create(['name' => 'Shared item', 'code' => 'SHARED-CODE', 'rate' => 100, 'gst_rate' => 18, 'unit' => 'Nos', 'type' => 'service']);
         $invoice = Invoice::create([

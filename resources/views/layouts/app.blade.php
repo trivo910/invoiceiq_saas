@@ -173,6 +173,10 @@
             {{-- Admin-only section --}}
             @if(auth()->check() && auth()->user()->isAdmin())
             <div class="nav-section">Admin</div>
+            <a href="{{ route('billing.index') }}" class="nav-item {{ request()->routeIs('billing.*') ? 'active' : '' }}" data-tooltip="Billing">
+                <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M1 6h14M4 10h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                <span class="nav-label">Billing</span>
+            </a>
             <a href="{{ route('users.index') }}" class="nav-item {{ request()->routeIs('users.*') ? 'active' : '' }}" data-tooltip="Users">
                 <svg viewBox="0 0 16 16" fill="none">
                     <circle cx="6" cy="5" r="2.5" stroke="currentColor" stroke-width="1.3"/>

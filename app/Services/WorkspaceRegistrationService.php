@@ -4,12 +4,17 @@ namespace App\Services;
 
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\TenantContext;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class WorkspaceRegistrationService
 {
+    public function __construct(private TenantContext $context)
+    {
+    }
+
     public function register(array $data): User
     {
         return DB::transaction(function () use ($data) {
@@ -21,8 +26,20 @@ class WorkspaceRegistrationService
                 'name' => $data['workspace'],
                 'slug' => Str::slug($data['workspace']).'-'.Str::lower(Str::random(6)),
                 'status' => 'active',
+                'trial_ends_at' => now()->addDays((int) config('billing.trial_days', 14)),
             ]);
             $tenant->users()->attach($user->id, ['role' => 'owner']);
+            $trial = \App\Models\Plan::where('code', 'trial')->firstOrFail();
+            $this->context->set($tenant);
+            try {
+                $tenant->subscriptions()->create([
+                    'plan_id' => $trial->id,
+                    'status' => 'trialing',
+                    'trial_ends_at' => $tenant->trial_ends_at,
+                ]);
+            } finally {
+                $this->context->clear();
+            }
             return $user;
         });
     }

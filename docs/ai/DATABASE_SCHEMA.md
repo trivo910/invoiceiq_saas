@@ -1,8 +1,8 @@
 # Database schema
 
-## Current schema through Phase 3
+## Current schema through Phase 4
 
-The following describes checked-in migrations through Phase 2; Phase 3 changed application validation/storage behavior without adding schema. The local configured MySQL database was also inspected before and after migration; other deployed databases may differ and require their own preflight.
+The following describes checked-in migrations through Phase 4. Phase 3 changed application validation/storage behavior without adding schema. The local configured MySQL database was also inspected before and after migration; other deployed databases may differ and require their own preflight.
 
 | Table | Columns and relationships | Indexes/uniqueness |
 |---|---|---|
@@ -16,6 +16,11 @@ The following describes checked-in migrations through Phase 2; Phase 3 changed a
 | `invoice_items` | id, tenant_id FK, invoice FK, nullable item FK, sort order, item snapshot, qty/rate/discount/taxable fields, GST/cess rates and amounts, total tax/amount, timestamps | existing HSN, GST rate, invoice+sort indexes |
 | `payments` | id, tenant_id FK, invoice FK, amount/date/mode/reference/notes, timestamps | existing invoice+payment_date index |
 | `tenant_invoice_sequences` | id, tenant_id FK, financial_year (`YYYY-YY`), next_number, timestamps | unique tenant_id+financial_year |
+| `plans` | code/name/description, nullable monthly/yearly INR price in paise, nullable invoice/member limits, nullable report/branding/API feature flags, Razorpay monthly/yearly plan IDs, active/sort fields | unique code |
+| `tenant_subscriptions` | tenant_id FK, plan_id FK, status, interval, unique Razorpay subscription ID, trial/period/grace/cancel/end timestamps, provider metadata JSON | tenant/status index |
+| `billing_events` | unique provider event ID, event type, nullable tenant FK, processed timestamp | unique provider_event_id |
+| `billing_payments` | tenant_id FK, nullable subscription FK, unique provider payment ID, amount/currency/status/method/paid timestamp/provider metadata | tenant/created index |
+| `billing_invoices` | tenant_id FK, nullable payment FK, unique number, subtotal/tax/tax breakdown/total/currency, seller/buyer JSON snapshots, issue timestamp | tenant/issued index |
 | `users` | id, name, globally unique email, verified timestamp, password, legacy role, remember token, timestamps | unique email |
 | `password_reset_tokens` | email primary key, token, created_at | primary key email |
 | `jobs` | queue, payload, attempts, reservation/availability/creation timestamps | queue index |
@@ -38,9 +43,10 @@ Users remain global identity records. `tenant_user` supports multiple workspaces
 5. [x] Add database queue config and jobs/batches/failed-jobs tables for shared-host-compatible queuing.
 6. [x] Add onboarding state, mark migrated tenants complete and existing users verified to preserve their access, then add tenant invitations.
 7. [x] Phase 3: scope raw dashboard SQL and GST joins; validate linked records and private logo access; add two-tenant feature tests.
-8. [ ] Phase 4: plans, trials, usage limits, and billing.
+8. [x] Phase 4 foundation: plans/subscriptions/payments/invoices/events schema; new-account trials; checkout configuration; signed/idempotent webhook processing; billing history and read-only/usage enforcement.
+9. [ ] Phase 4 product configuration: populate approved prices/limits, seller tax details, grace behavior, downgrade/proration/refund policy, then run provider sandbox and invoice QA.
 
-Migration files: `2026_10_23_000001_create_tenants_and_scope_business_data.php`, `2026_10_23_000002_create_database_queue_tables.php`, `2026_10_23_000003_add_tenant_scoped_customer_gstin_unique.php`, `2026_10_23_000004_add_phase_two_auth_and_invitations.php`.
+Migration files: `2026_10_23_000001_create_tenants_and_scope_business_data.php`, `2026_10_23_000002_create_database_queue_tables.php`, `2026_10_23_000003_add_tenant_scoped_customer_gstin_unique.php`, `2026_10_23_000004_add_phase_two_auth_and_invitations.php`, `2026_10_26_000001_create_billing_tables.php`, and `2026_10_26_000002_add_tax_breakdown_to_billing_invoices.php`.
 
 ## Preflight and verification
 
@@ -49,4 +55,4 @@ On the configured local MySQL database before migration: 5 customers, 9 items, 1
 New generated invoice numbers use `PREFIX-YYYY-YY-NNNN` (for example `INV-2026-27-0001`) based on the tenant's configured FY start. Existing invoice numbers are not rewritten. SQLite is not the production database target; the migration and locking behavior were exercised against the configured local MySQL only.
 
 
-Phase 3 introduced no schema migration. Feature tests run against a separate MySQL database named invoiceiq_test; the local development database is not used by the suite. The checked local data audit found zero cross-tenant invoice/customer, line/invoice, line/item, or payment/invoice links.
+Phase 3 introduced no schema migration. Phase 4 adds migrations `2026_10_26_000001_create_billing_tables.php`, `2026_10_26_000002_add_tax_breakdown_to_billing_invoices.php`, and `2026_10_26_000003_make_plan_features_optional.php`. Feature tests run against a separate MySQL database named invoiceiq_test; the local development database is not used by the suite. The checked local data audit found zero cross-tenant invoice/customer, line/invoice, line/item, or payment/invoice links.

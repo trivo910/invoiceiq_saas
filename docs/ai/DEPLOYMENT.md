@@ -8,6 +8,8 @@ Set `MAIL_MAILER=smtp`, `MAIL_HOST`, `MAIL_PORT`, optional `MAIL_USERNAME`/`MAIL
 
 After upgrading Phase 2 installations, run `php artisan tenants:migrate-legacy-logos` once to move any legacy public logo files and references into tenant-private storage. New onboarding and settings uploads already use private tenant paths.
 
+Phase 4 migrations create configurable billing plans/subscriptions and tenant-scoped payment/invoice history. New workspaces receive a 14-day trial. Before enabling paid billing, obtain approved product values, set Razorpay credentials, monthly/yearly cycle counts, and `BILLING_PRICE_TAX_MODE` (`inclusive` or `exclusive`) in protected environment configuration, populate active plan prices/quotas and matching Razorpay plan IDs, and configure the SaaS seller GST/SAC invoice details. Register `https://<your-domain>/webhooks/razorpay` with Razorpay for subscription activated/authenticated/charged/pending/halted/cancelled/completed/resumed and payment captured events, using the matching webhook secret. Keep checkout disabled until a Razorpay sandbox checkout and signed webhook replay have been verified. `BILLING_GRACE_DAYS` must be set from an approved decision; while blank, failed payments do not switch a workspace to read-only.
+
 ## Target common requirements
 
 - Production database: MySQL with UTF-8 (`utf8mb4`); configure `.env`, `config/database.php`, and setup documentation together. The application now defaults to MySQL when `DB_CONNECTION` is omitted.

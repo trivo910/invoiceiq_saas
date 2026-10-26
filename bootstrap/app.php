@@ -17,7 +17,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\CheckRole::class,
             'tenant' => \App\Http\Middleware\ResolveTenant::class,
             'onboarded' => \App\Http\Middleware\EnsureOnboardingComplete::class,
+            'subscription' => \App\Http\Middleware\EnsureSubscriptionWritable::class,
+            'plan.limit' => \App\Http\Middleware\CheckPlanLimit::class,
+            'plan.feature' => \App\Http\Middleware\CheckPlanFeature::class,
         ]);
+        $middleware->validateCsrfTokens(except: ['webhooks/razorpay']);
         $middleware->appendToPriorityList(
             \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
             \App\Http\Middleware\ResolveTenant::class

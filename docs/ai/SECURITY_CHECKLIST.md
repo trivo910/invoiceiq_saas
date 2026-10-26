@@ -13,7 +13,7 @@ Use this tick-box list during implementation and before release. Phase 0 records
 ## Web and account security
 
 - [x] CSRF remains enabled on state-changing web routes.
-- [x] Login, registration, password reset, verification, invitation acceptance, and invitation creation are throttled; no webhook/API endpoints exist yet.
+- [x] Login, registration, password reset, verification, invitation acceptance/creation, and Razorpay webhook routes are throttled.
 - [x] Session ID rotates on login; logout invalidates session and CSRF token.
 - [x] Email verification and password reset tokens use framework protections and expiry.
 - [x] Role checks are enforced server-side through Gates and membership-aware middleware.
@@ -23,12 +23,12 @@ Use this tick-box list during implementation and before release. Phase 0 records
 - [ ] Validate GSTIN shape and state code server-side; normalize identifiers.
 - [x] Validate uploaded content, MIME, size, and allowed image formats; use generated names and tenant-private paths.
 - [x] Serve logos through an authenticated tenant-scoped route; migrate legacy public logos to private storage.
-- [ ] Protect secrets and webhook signatures; never log credentials, payment secrets, or full sensitive payloads.
+- [x] Razorpay secrets are environment-configured; webhook HMAC uses raw request bytes, unique event IDs, and does not log credentials or payloads.
 - [ ] Audit invoice create/edit/delete, role changes, billing events, impersonation, and super-admin actions.
 
 ## Billing and operations
 
-- [ ] Razorpay signature verification, idempotency, replay handling, and state transitions are tested.
-- [ ] Plan limit checks cannot be bypassed by alternate routes or concurrent requests.
-- [ ] Failed billing enters configured grace/read-only behavior without data deletion.
+- [x] Razorpay signature verification, idempotency, replay handling, checkout gating, and payment/subscription state updates are feature-tested.
+- [x] Invoice/member plan limits are enforced at write routes, rechecked under a tenant-row lock, and checked again at invitation acceptance.
+- [x] Expired trials and configured grace/period end enter read-only mode without data deletion; grace behavior stays open until its approved value is configured.
 - [ ] Backup/restore, migration rollback, and tenant data export are exercised.

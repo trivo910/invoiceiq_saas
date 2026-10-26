@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\TenantInvitation;
+use App\Models\Tenant;
+use App\Services\BillingService;
 use App\Support\TenantContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,7 +28,18 @@ class UsersController extends Controller
         $tenant = app(TenantContext::class)->tenant();
         if ($tenant->users()->where('email', $data['email'])->exists()) return back()->withErrors(['email' => 'This person is already a workspace member.']);
         $plainToken = Str::random(64);
-        $invite = TenantInvitation::updateOrCreate(['tenant_id' => $tenant->id, 'email' => $data['email']], ['invited_by' => $request->user()->id, 'role' => $data['role'], 'token_hash' => hash('sha256', $plainToken), 'expires_at' => now()->addDays(7), 'accepted_at' => null]);
+        $invite = null;
+        $limitReached = false;
+        \Illuminate\Support\Facades\DB::transaction(function () use ($tenant, $data, $request, $plainToken, &$invite, &$limitReached) {
+            Tenant::query()->whereKey($tenant->id)->lockForUpdate()->firstOrFail();
+            $existing = TenantInvitation::where('tenant_id', $tenant->id)->where('email', $data['email'])->first();
+            if (app(BillingService::class)->limitReached($tenant, 'members', $existing?->id)) {
+                $limitReached = true;
+                return;
+            }
+            $invite = TenantInvitation::updateOrCreate(['tenant_id' => $tenant->id, 'email' => $data['email']], ['invited_by' => $request->user()->id, 'role' => $data['role'], 'token_hash' => hash('sha256', $plainToken), 'expires_at' => now()->addDays(7), 'accepted_at' => null]);
+        });
+        if ($limitReached) return redirect()->route('billing.index')->with('billing_limit', 'Member limit reached for your plan.');
         $url = route('invitations.accept', $plainToken);
         try {
             Mail::raw("You have been invited to join {$tenant->name} on InvoiceIQ. Accept your invitation within 7 days: {$url}", fn ($message) => $message->to($invite->email)->subject("Invitation to {$tenant->name}"));

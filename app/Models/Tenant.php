@@ -46,4 +46,14 @@ class Tenant extends Model
     {
         return $this->hasMany(Invoice::class);
     }
+
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(TenantSubscription::class);
+    }
+
+    public function currentSubscription(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(TenantSubscription::class)->latestOfMany();
+    }
 }

@@ -24,6 +24,7 @@ Open: **http://localhost:8000**
 | Item Master | Full CRUD, HSN/SAC, GST rate, unit |
 | Settings | Company profile, bank details, invoice numbering |
 | Payments | Record partial/full payments |
+| Billing | Trial, plan usage, Razorpay subscription checkout, payment history, subscription invoice PDFs |
 
 ## Requirements
 - PHP >= 8.2
@@ -47,6 +48,8 @@ Then: `php artisan migrate --seed`. The tenancy foundation migration creates a d
 Visitors can create an account and workspace. New accounts must verify their email before using billing screens. Configure `MAIL_MAILER=smtp` and the SMTP host, port, credentials, encryption, and sender in `.env` to deliver verification, password reset, and team invitation emails. The default `log` mailer writes email content to the Laravel log for local development.
 
 After verification, the workspace owner completes company/GST details and invoice prefix setup. Adding an initial customer and item is optional. Owners and admins can invite teammates with workspace-scoped roles.
+
+New workspaces receive a 14-day card-free trial by default. Phase 4 stores configurable plans, quotas, subscriptions, provider events, and billing history. Paid checkout is disabled until approved plan prices/limits, Razorpay plan IDs/credentials/cycle count, grace duration, and the SaaS seller's tax invoice details are configured. See `docs/ai/BILLING_AND_PLANS.md`; do not activate billing with placeholder tax or pricing values.
 
 ## Tenancy foundation
 

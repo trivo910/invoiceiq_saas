@@ -2,7 +2,7 @@
 
 ## Current application (observed)
 
-Laravel 11 routes requests through `routes/web.php` into controllers, Eloquent models, Blade views, and MySQL. Phases 1 and 2 add tenant middleware/context, membership-based authorization Gates, auth lifecycle, onboarding, invitations, and invoice numbering. Most validation remains inside controllers; invoice math is split between the invoice controller and browser JavaScript. Dashboard and GST reports still include direct `DB` queries that require Phase 3 audit.
+Laravel 11 routes requests through `routes/web.php` into controllers, Eloquent models, Blade views, and MySQL. Phases 1–4 add tenant middleware/context, membership authorization, auth/onboarding, invoice numbering, isolation protections, trials, plans, billing records, Razorpay webhooks, and subscription/limit middleware. Most validation remains inside controllers; invoice math is split between the invoice controller and browser JavaScript. Commercial billing values remain unconfigured pending product decisions.
 
 ## Target tenancy design
 
@@ -22,7 +22,7 @@ Keep current Laravel folders. Add focused `app/Services`, `app/Http/Requests`, `
 
 Invoice numbering should be tenant and financial-year scoped, configurable by tenant prefix, and claimed inside a DB transaction using a locked sequence row. Webhooks must be signature-verified and idempotent. Use the database queue driver; cron invokes `schedule:run`. The host may not support persistent workers, Redis, or Horizon.
 
-Phase 1 implements the tenant root, membership pivot, request context, scoped business models, financial-year numbering service, and database queue config/tables. Phase 2 adds registration, verification, recovery, onboarding, member invitations, and role Gates. Raw report/dashboard queries and file isolation remain later work.
+Phase 1 implements the tenant root, membership pivot, request context, scoped business models, financial-year numbering service, and database queue config/tables. Phase 2 adds registration, verification, recovery, onboarding, member invitations, and role Gates. Phase 3 scopes reports and files. Phase 4 adds configurable billing, verified provider events, and subscription/usage checks; production checkout awaits approved plan/tax/grace values and provider sandbox QA.
 
 ## Data transition
 

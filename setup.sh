@@ -47,6 +47,8 @@ php artisan migrate --force
 php artisan db:seed --force
 chmod -R 775 storage bootstrap/cache 2>/dev/null || true
 
+echo -e "${YELLOW}Billing starts with unconfigured paid plans. Review docs/ai/BILLING_AND_PLANS.md and add approved plan, tax, and Razorpay settings before enabling checkout.${NC}"
+
 echo -e "\n${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo -e " Setup complete!"
 echo -e "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"

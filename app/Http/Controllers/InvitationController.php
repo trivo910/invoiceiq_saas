@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\TenantInvitation;
 use App\Models\User;
+use App\Models\Tenant;
+use App\Services\BillingService;
+use App\Support\TenantContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -31,16 +34,32 @@ class InvitationController extends Controller
         if (auth()->check()) {
             abort_unless(auth()->user()->email === $invite->email, 403);
             $user = auth()->user();
+            $data = null;
         } else {
             abort_if(User::where('email', $invite->email)->exists(), 403, 'Please sign in before accepting this workspace invitation.');
             $data = $request->validate(['name' => ['required', 'string', 'max:255'], 'password' => ['required', 'string', 'min:8', 'confirmed']]);
-            $user = User::create(['name' => $data['name'], 'email' => $invite->email, 'password' => Hash::make($data['password']), 'role' => 'staff']);
-            $user->markEmailAsVerified();
+            $user = null;
         }
-        DB::transaction(function () use ($invite, $user) {
-            $invite->tenant->users()->syncWithoutDetaching([$user->id => ['role' => $invite->role]]);
-            $invite->update(['accepted_at' => now()]);
-        });
+        $context = app(TenantContext::class);
+        $tenant = $invite->tenant;
+        $context->set($tenant);
+        try {
+            DB::transaction(function () use ($invite, $tenant, &$user, $data, $context) {
+                Tenant::query()->whereKey($tenant->id)->lockForUpdate()->firstOrFail();
+                $lockedInvite = TenantInvitation::whereKey($invite->id)->lockForUpdate()->firstOrFail();
+                abort_unless(! $lockedInvite->accepted_at && $lockedInvite->expires_at->isFuture(), 410);
+                abort_unless(app(BillingService::class)->canWrite($tenant), 403, 'This workspace cannot accept members while it is read-only.');
+                abort_unless(! app(BillingService::class)->limitReached($tenant, 'members', $lockedInvite->id), 403, 'This workspace has reached its member limit.');
+                if (! $user) {
+                    $user = User::create(['name' => $data['name'], 'email' => $lockedInvite->email, 'password' => Hash::make($data['password']), 'role' => 'staff']);
+                    $user->markEmailAsVerified();
+                }
+                $tenant->users()->syncWithoutDetaching([$user->id => ['role' => $lockedInvite->role]]);
+                $lockedInvite->update(['accepted_at' => now()]);
+            });
+        } finally {
+            $context->clear();
+        }
         auth()->login($user);
         request()->session()->regenerate();
         request()->session()->put('current_tenant_id', $invite->tenant_id);

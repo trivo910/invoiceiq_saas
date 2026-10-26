@@ -7,6 +7,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Customer;
 use App\Models\Payment;
+use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -74,8 +75,15 @@ class InvoiceController extends Controller
         ], array_merge(['customer_name.required' => 'Please select a customer.'], $this->rowMessages($request)));
 
         $invoice = null;
+        $planLimitReached = false;
         try {
-            DB::transaction(function () use ($request, &$invoice) {
+            DB::transaction(function () use ($request, &$invoice, &$planLimitReached) {
+                $tenantId = app(TenantContext::class)->id();
+                $tenant = Tenant::query()->whereKey($tenantId)->lockForUpdate()->firstOrFail();
+                if (app(\App\Services\BillingService::class)->limitReached($tenant, 'invoices')) {
+                    $planLimitReached = true;
+                    return;
+                }
                 $data = $this->invoiceData($request);
 
                 // Atomically claim the next sequence number when the user kept the suggestion
@@ -91,6 +99,7 @@ class InvoiceController extends Controller
             return back()->withInput()
                 ->withErrors(['number' => 'This invoice number was just taken by another submission. Please change the number and try again.']);
         }
+        if ($planLimitReached) return redirect()->route('billing.index')->with('billing_limit', 'Invoice limit reached for your plan.');
         assert($invoice instanceof Invoice);
 
         DashboardCache::forget();

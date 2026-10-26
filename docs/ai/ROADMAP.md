@@ -1,6 +1,6 @@
 # SaaS conversion roadmap
 
-Status after Phase 3: **Phases 1–3 complete; Phase 4 next**.
+Status: **Phases 1–3 complete; Phase 4 foundation implemented, awaiting product decisions and sandbox QA**.
 
 ## Phase 0 — Documentation setup
 
@@ -32,10 +32,15 @@ Status after Phase 3: **Phases 1–3 complete; Phase 4 next**.
 - [x] Move tenant logos to private paths, migrate legacy public logo references, and serve through the authenticated tenant route.
 - [x] Add MySQL-backed feature coverage for dashboard/cache, search, route binding, cross-tenant writes/relations, GST reports/Excel export, and logos.
 
-## Phase 4 — Plans and billing (not started)
+## Phase 4 — Plans and billing (in progress)
 
-- [ ] Plans, trial, usage and plan limit middleware.
-- [ ] Razorpay subscriptions, verified idempotent webhooks, billing UI, grace/read-only behavior.
+- [x] Configurable plan/subscription/payment/invoice/webhook schema; card-free 14-day trials for new workspaces.
+- [x] Razorpay server-side checkout and signed, idempotent webhook state/payment processing.
+- [x] Billing page, tenant payment history, configurable subscription tax invoice PDFs, usage meters, and read-only behavior.
+- [x] Invoice/member plan limit checks with tenant-row lock rechecks for concurrent writes.
+- [ ] Set approved plan prices/limits, Razorpay plan IDs and cycle count; run provider sandbox verification.
+- [ ] Set seller GST/SAC invoice details and approved GST treatment; verify tax invoice output.
+- [ ] Set approved grace period, downgrade-over-limit, proration, and refund rules.
 
 ## Phase 5 — Super-admin (not started)
 
