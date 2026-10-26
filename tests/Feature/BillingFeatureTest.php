@@ -179,6 +179,39 @@ class BillingFeatureTest extends TestCase
         $this->assertSame(['CGST' => 900, 'SGST' => 900], json_decode($invoice->tax_breakdown, true));
     }
 
+    public function test_failed_renewal_is_saved_once_without_issuing_an_invoice(): void
+    {
+        [$tenant, , $subscription] = $this->workspace('Failed renewal', 'failed-renewal@example.test', now()->addDays(10), null, 'sub_failed_123');
+        $raw = json_encode([
+            'event' => 'subscription.pending',
+            'payload' => [
+                'subscription' => ['entity' => ['id' => 'sub_failed_123']],
+                'payment' => ['entity' => [
+                    'id' => 'pay_failed_123', 'subscription_id' => 'sub_failed_123', 'amount' => 11800,
+                    'currency' => 'INR', 'method' => 'card', 'order_id' => 'order_failed_123', 'error_code' => 'BAD_REQUEST_ERROR',
+                ]],
+            ],
+        ], JSON_THROW_ON_ERROR);
+        config(['billing.razorpay.webhook_secret' => 'webhook-secret']);
+        $headers = [
+            'CONTENT_TYPE' => 'application/json', 'HTTP_X_RAZORPAY_EVENT_ID' => 'evt_failed_123',
+            'HTTP_X_RAZORPAY_SIGNATURE' => hash_hmac('sha256', $raw, 'webhook-secret'),
+        ];
+
+        $this->call('POST', route('billing.webhook'), [], [], [], $headers, $raw)->assertNoContent();
+        $this->call('POST', route('billing.webhook'), [], [], [], $headers, $raw)->assertNoContent();
+
+        $payment = DB::table('billing_payments')->where('provider_payment_id', 'pay_failed_123')->first();
+        $this->assertNotNull($payment);
+        $this->assertSame($tenant->id, (int) $payment->tenant_id);
+        $this->assertSame($subscription->id, (int) $payment->subscription_id);
+        $this->assertSame('failed', $payment->status);
+        $this->assertNull($payment->paid_at);
+        $this->assertSame(['order_id' => 'order_failed_123', 'error_code' => 'BAD_REQUEST_ERROR'], json_decode($payment->provider_metadata, true));
+        $this->assertSame(1, DB::table('billing_payments')->where('provider_payment_id', 'pay_failed_123')->count());
+        $this->assertSame(0, DB::table('billing_invoices')->where('tenant_id', $tenant->id)->count());
+    }
+
     public function test_explicit_plan_feature_denial_redirects_to_billing(): void
     {
         [$tenant, $user] = $this->workspace('No Reports', 'no-reports@example.test', now()->addDays(10), null);

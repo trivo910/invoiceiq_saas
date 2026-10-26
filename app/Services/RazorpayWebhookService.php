@@ -66,18 +66,26 @@ class RazorpayWebhookService
                     $subscription->update(['status' => 'cancelled', 'ended_at' => $endsAt && $endsAt->isFuture() ? $endsAt : now()]);
                 }
 
-                if (($event === 'payment.captured' || $event === 'subscription.charged') && ! empty($paymentData['id'])) {
-                    $payment = BillingPayment::firstOrCreate(
-                        ['provider_payment_id' => $paymentData['id']],
-                        [
-                            'tenant_id' => $tenant->id, 'subscription_id' => $subscription->id,
-                            'amount_paise' => (int) ($paymentData['amount'] ?? 0), 'currency' => $paymentData['currency'] ?? 'INR',
-                            'status' => 'captured', 'method' => $paymentData['method'] ?? null,
-                            'paid_at' => isset($paymentData['created_at']) ? now()->setTimestamp((int) $paymentData['created_at']) : now(),
-                            'provider_metadata' => ['order_id' => $paymentData['order_id'] ?? null],
-                        ]
-                    );
-                    $this->issueInvoiceIfConfigured($tenant, $payment);
+                $captured = in_array($event, ['payment.captured', 'subscription.charged'], true);
+                $failed = in_array($event, ['payment.failed', 'subscription.pending'], true);
+                if (($captured || $failed) && ! empty($paymentData['id']) && is_numeric($paymentData['amount'] ?? null)) {
+                    $attributes = [
+                        'tenant_id' => $tenant->id,
+                        'subscription_id' => $subscription->id,
+                        'amount_paise' => max(0, (int) $paymentData['amount']),
+                        'currency' => strtoupper((string) ($paymentData['currency'] ?? 'INR')),
+                        'status' => $captured ? 'captured' : 'failed',
+                        'method' => $paymentData['method'] ?? null,
+                        'paid_at' => $captured
+                            ? (isset($paymentData['created_at']) ? now()->setTimestamp((int) $paymentData['created_at']) : now())
+                            : null,
+                        'provider_metadata' => array_filter([
+                            'order_id' => $paymentData['order_id'] ?? null,
+                            'error_code' => data_get($paymentData, 'error_code'),
+                        ], fn ($value) => $value !== null),
+                    ];
+                    $payment = BillingPayment::updateOrCreate(['provider_payment_id' => $paymentData['id']], $attributes);
+                    if ($captured) $this->issueInvoiceIfConfigured($tenant, $payment);
                 }
 
                 DB::table('billing_events')->where('provider_event_id', $eventId)->update([

@@ -6,7 +6,7 @@
 - **Status:** Foundation implemented; waiting for approved prices, limits, seller tax identity/treatment, grace duration, and downgrade/proration/refund decisions before production billing.
 - **Code changes:** Phase 4 plan/subscription/payment/invoice/event schema, 14-day trials, usage/read-only middleware, Razorpay checkout/webhook services, billing page/history/PDF, and tests, plus completed Phases 1-3.
 - **Migration state:** Phase 4 migrations applied to local MySQL and the separate `invoiceiq_test` database.
-- **Automated tests:** `php vendor/bin/phpunit` passes: 17 tests, 97 assertions on MySQL.
+- **Automated tests:** `php vendor/bin/phpunit` passes: 18 tests, 109 assertions on MySQL.
 
 ## Completed
 
@@ -32,6 +32,7 @@
 - Added configurable plans and tenant subscriptions; new workspaces receive a 14-day card-free trial and migrated workspaces keep an unlimited legacy plan.
 - Added Razorpay server-side checkout, raw-body HMAC webhook verification/idempotency, tenant payment history, configurable subscription tax invoices, billing UI, usage meters, and trial/grace/period-end read-only enforcement.
 - Added tenant-locked rechecks for invoice/member limits and feature coverage for trials, checkout, webhook replay/payment capture, private billing PDFs, and tenant isolation.
+- Added tenant-scoped failed renewal payment history from signed Razorpay webhooks; event replay creates no duplicate payment or invoice.
 
 ## In progress / next
 

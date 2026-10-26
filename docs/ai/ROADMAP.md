@@ -38,6 +38,7 @@ Status: **Phases 1–3 complete; Phase 4 foundation implemented, awaiting produc
 - [x] Razorpay server-side checkout and signed, idempotent webhook state/payment processing.
 - [x] Billing page, tenant payment history, configurable subscription tax invoice PDFs, usage meters, and read-only behavior.
 - [x] Invoice/member plan limit checks with tenant-row lock rechecks for concurrent writes.
+- [x] Save failed renewal attempts from signed webhooks in tenant billing history without issuing invoices; verify provider event replay is idempotent.
 - [ ] Set approved plan prices/limits, Razorpay plan IDs and cycle count; run provider sandbox verification.
 - [ ] Set seller GST/SAC invoice details and approved GST treatment; verify tax invoice output.
 - [ ] Set approved grace period, downgrade-over-limit, proration, and refund rules.

@@ -46,7 +46,7 @@ Users remain global identity records. `tenant_user` supports multiple workspaces
 8. [x] Phase 4 foundation: plans/subscriptions/payments/invoices/events schema; new-account trials; checkout configuration; signed/idempotent webhook processing; billing history and read-only/usage enforcement.
 9. [ ] Phase 4 product configuration: populate approved prices/limits, seller tax details, grace behavior, downgrade/proration/refund policy, then run provider sandbox and invoice QA.
 
-Migration files: `2026_10_23_000001_create_tenants_and_scope_business_data.php`, `2026_10_23_000002_create_database_queue_tables.php`, `2026_10_23_000003_add_tenant_scoped_customer_gstin_unique.php`, `2026_10_23_000004_add_phase_two_auth_and_invitations.php`, `2026_10_26_000001_create_billing_tables.php`, and `2026_10_26_000002_add_tax_breakdown_to_billing_invoices.php`.
+Migration files: `2026_10_23_000001_create_tenants_and_scope_business_data.php`, `2026_10_23_000002_create_database_queue_tables.php`, `2026_10_23_000003_add_tenant_scoped_customer_gstin_unique.php`, `2026_10_23_000004_add_phase_two_auth_and_invitations.php`, `2026_10_26_000001_create_billing_tables.php`, `2026_10_26_000002_add_tax_breakdown_to_billing_invoices.php`, and `2026_10_26_000003_make_plan_features_optional.php`.
 
 ## Preflight and verification
 
