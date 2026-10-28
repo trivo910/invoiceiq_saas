@@ -7,25 +7,18 @@ use App\Models\BillingPayment;
 use App\Models\TenantSubscription;
 use App\Support\TenantContext;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class RazorpayWebhookService
 {
-    public function __construct(private TenantContext $context)
+    public function __construct(private TenantContext $context, private BillingService $billing)
     {
     }
 
-    public function process(string $eventId, array $payload): void
+    public function process(string $eventId, array $payload): bool
     {
-        DB::transaction(function () use ($eventId, $payload) {
-            $inserted = DB::table('billing_events')->insertOrIgnore([
-                'provider_event_id' => $eventId,
-                'event_type' => (string) ($payload['event'] ?? 'unknown'),
-                'created_at' => now(), 'updated_at' => now(),
-            ]);
-            if (! $inserted) return;
-
+        return DB::transaction(function () use ($eventId, $payload): bool {
             $subscriptionData = data_get($payload, 'payload.subscription.entity', []);
             $paymentData = data_get($payload, 'payload.payment.entity', []);
             $subscriptionData = is_array($subscriptionData) ? $subscriptionData : [];
@@ -34,9 +27,21 @@ class RazorpayWebhookService
             $subscriptionRow = $providerSubscriptionId
                 ? DB::table('tenant_subscriptions')->where('razorpay_subscription_id', $providerSubscriptionId)->lockForUpdate()->first()
                 : null;
+
+            // A webhook can beat the local insert just after the provider creates a subscription.
+            // Do not consume that event; ask the provider to retry once checkout commits locally.
+            if ($providerSubscriptionId && ! $subscriptionRow) return false;
+
+            $inserted = DB::table('billing_events')->insertOrIgnore([
+                'provider_event_id' => $eventId,
+                'event_type' => (string) ($payload['event'] ?? 'unknown'),
+                'created_at' => now(), 'updated_at' => now(),
+            ]);
+            if (! $inserted) return true;
+
             if (! $subscriptionRow) {
                 DB::table('billing_events')->where('provider_event_id', $eventId)->update(['processed_at' => now(), 'updated_at' => now()]);
-                return;
+                return true;
             }
 
             $tenant = \App\Models\Tenant::find($subscriptionRow->tenant_id);
@@ -45,14 +50,52 @@ class RazorpayWebhookService
             try {
                 $subscription = TenantSubscription::query()->findOrFail($subscriptionRow->id);
                 $event = (string) ($payload['event'] ?? '');
+                $paymentSubscriptionId = is_string($paymentData['subscription_id'] ?? null)
+                    ? $paymentData['subscription_id']
+                    : null;
+                if ($subscriptionData && $paymentSubscriptionId !== null
+                    && $paymentSubscriptionId !== $subscriptionRow->razorpay_subscription_id) {
+                    Log::warning('Razorpay webhook contained conflicting subscription IDs.', [
+                        'event_id' => $eventId,
+                        'tenant_id' => $tenant->id,
+                        'subscription_id' => $subscription->id,
+                    ]);
+                    DB::table('billing_events')->where('provider_event_id', $eventId)->update([
+                        'tenant_id' => $tenant->id, 'processed_at' => now(), 'updated_at' => now(),
+                    ]);
+                    return true;
+                }
+                $providerPaymentId = is_string($paymentData['id'] ?? null) && $paymentData['id'] !== ''
+                    ? $paymentData['id']
+                    : null;
+                $existingPaymentRow = $providerPaymentId
+                    ? DB::table('billing_payments')->where('provider_payment_id', $providerPaymentId)->lockForUpdate()->first()
+                    : null;
+                if ($existingPaymentRow && (
+                    (int) $existingPaymentRow->tenant_id !== (int) $tenant->id
+                    || (int) $existingPaymentRow->subscription_id !== (int) $subscription->id
+                )) {
+                    Log::warning('Razorpay webhook reused a payment ID bound to another billing record.', [
+                        'event_id' => $eventId,
+                        'provider_payment_id' => $providerPaymentId,
+                        'tenant_id' => $tenant->id,
+                        'subscription_id' => $subscription->id,
+                    ]);
+                    DB::table('billing_events')->where('provider_event_id', $eventId)->update([
+                        'tenant_id' => $tenant->id, 'processed_at' => now(), 'updated_at' => now(),
+                    ]);
+                    return true;
+                }
+                $existingPayment = ! empty($paymentData['id'])
+                    ? BillingPayment::where('provider_payment_id', $paymentData['id'])->first()
+                    : null;
+                $alreadyCapturedPayment = $existingPayment?->status === 'captured';
                 $stateEvents = [
                     'subscription.activated', 'subscription.charged', 'subscription.resumed',
                     'subscription.pending', 'subscription.halted', 'payment.failed',
-                    'subscription.cancelled', 'subscription.completed',
+                    'subscription.cancelled', 'subscription.completed', 'subscription.paused',
                 ];
-                $providerEventAt = is_numeric($payload['created_at'] ?? null) && (int) $payload['created_at'] > 0
-                    ? now()->setTimestamp((int) $payload['created_at'])
-                    : null;
+                $providerEventAt = $this->providerTimestamp($payload['created_at'] ?? null);
                 $staleStateEvent = in_array($event, $stateEvents, true)
                     && $providerEventAt
                     && $subscription->provider_state_at
@@ -61,23 +104,38 @@ class RazorpayWebhookService
                 if (! $staleStateEvent && in_array($event, ['subscription.activated', 'subscription.charged', 'subscription.resumed'], true)) {
                     $subscription->update([
                         'status' => 'active',
-                        'current_period_starts_at' => isset($subscriptionData['current_start']) ? now()->setTimestamp((int) $subscriptionData['current_start']) : $subscription->current_period_starts_at,
-                        'current_period_ends_at' => isset($subscriptionData['current_end']) ? now()->setTimestamp((int) $subscriptionData['current_end']) : $subscription->current_period_ends_at,
+                        'current_period_starts_at' => $this->providerTimestamp($subscriptionData['current_start'] ?? null) ?? $subscription->current_period_starts_at,
+                        'current_period_ends_at' => $this->providerTimestamp($subscriptionData['current_end'] ?? null) ?? $subscription->current_period_ends_at,
                         'grace_ends_at' => null,
+                        'past_due_started_at' => null,
                     ]);
-                } elseif (! $staleStateEvent && in_array($event, ['subscription.pending', 'subscription.halted', 'payment.failed'], true) && $subscription->status !== 'pending') {
+                } elseif (! $staleStateEvent && $event === 'subscription.halted' && $subscription->status === 'pending') {
+                    $subscription->update(['status' => 'checkout_failed']);
+                } elseif (! $staleStateEvent && ! ($event === 'payment.failed' && $alreadyCapturedPayment)
+                    && in_array($event, ['subscription.pending', 'subscription.halted', 'payment.failed'], true)
+                    && ! in_array($subscription->status, ['pending', 'checkout_failed'], true)) {
                     $graceDays = config('billing.grace_days');
+                    $pastDueStartedAt = $subscription->past_due_started_at
+                        ?? ($subscription->status === 'past_due' ? $subscription->provider_state_at : null)
+                        ?? $providerEventAt
+                        ?? now();
                     $subscription->update([
                         'status' => 'past_due',
-                        'grace_ends_at' => $subscription->grace_ends_at ?? ($graceDays === null ? null : now()->addDays((int) $graceDays)),
+                        'past_due_started_at' => $pastDueStartedAt,
+                        'grace_ends_at' => $subscription->grace_ends_at
+                            ?? ($graceDays === null ? null : $pastDueStartedAt->copy()->addDays((int) $graceDays)),
+                    ]);
+                } elseif (! $staleStateEvent && $event === 'subscription.paused') {
+                    $subscription->update([
+                        'status' => 'paused',
+                        'current_period_starts_at' => $this->providerTimestamp($subscriptionData['current_start'] ?? null) ?? $subscription->current_period_starts_at,
+                        'current_period_ends_at' => $this->providerTimestamp($subscriptionData['current_end'] ?? null) ?? $subscription->current_period_ends_at,
                     ]);
                 } elseif (! $staleStateEvent && $event === 'subscription.cancelled') {
-                    $endsAt = isset($subscriptionData['current_end']) ? now()->setTimestamp((int) $subscriptionData['current_end']) : $subscription->current_period_ends_at;
+                    $endsAt = $this->providerTimestamp($subscriptionData['current_end'] ?? null) ?? $subscription->current_period_ends_at;
                     $subscription->update(['status' => 'cancelled', 'current_period_ends_at' => $endsAt, 'ended_at' => $endsAt && $endsAt->isPast() ? now() : null]);
                 } elseif (! $staleStateEvent && $event === 'subscription.completed') {
-                    $endsAt = isset($subscriptionData['current_end'])
-                        ? now()->setTimestamp((int) $subscriptionData['current_end'])
-                        : $subscription->current_period_ends_at;
+                    $endsAt = $this->providerTimestamp($subscriptionData['current_end'] ?? null) ?? $subscription->current_period_ends_at;
                     $subscription->update([
                         'status' => 'completed',
                         'current_period_ends_at' => $endsAt,
@@ -90,23 +148,27 @@ class RazorpayWebhookService
 
                 $captured = in_array($event, ['payment.captured', 'subscription.charged'], true);
                 $failed = in_array($event, ['payment.failed', 'subscription.pending'], true);
-                if (($captured || $failed) && ! empty($paymentData['id']) && is_numeric($paymentData['amount'] ?? null)) {
+                $amountPaise = $this->providerAmount($paymentData['amount'] ?? null);
+                if (($captured || $failed) && is_string($paymentData['id'] ?? null) && $paymentData['id'] !== '' && $amountPaise !== null) {
+                    $currency = strtoupper(trim((string) ($paymentData['currency'] ?? '')));
+                    if (! preg_match('/^[A-Z]{3}$/D', $currency)) $currency = 'XXX';
+                    $paidAt = $this->providerTimestamp($paymentData['created_at'] ?? null) ?? now();
                     $attributes = [
                         'tenant_id' => $tenant->id,
                         'subscription_id' => $subscription->id,
-                        'amount_paise' => max(0, (int) $paymentData['amount']),
-                        'currency' => strtoupper((string) ($paymentData['currency'] ?? 'INR')),
+                        'amount_paise' => $amountPaise,
+                        'currency' => $currency,
                         'status' => $captured ? 'captured' : 'failed',
                         'method' => $paymentData['method'] ?? null,
-                        'paid_at' => $captured
-                            ? (isset($paymentData['created_at']) ? now()->setTimestamp((int) $paymentData['created_at']) : now())
-                            : null,
+                        'paid_at' => $captured ? $paidAt : null,
                         'provider_metadata' => array_filter([
                             'order_id' => $paymentData['order_id'] ?? null,
                             'error_code' => data_get($paymentData, 'error_code'),
                         ], fn ($value) => $value !== null),
                     ];
-                    $payment = BillingPayment::updateOrCreate(['provider_payment_id' => $paymentData['id']], $attributes);
+                    $payment = $alreadyCapturedPayment
+                        ? $existingPayment
+                        : BillingPayment::updateOrCreate(['provider_payment_id' => $paymentData['id']], $attributes);
                     if ($captured) $this->issueInvoiceIfConfigured($tenant, $payment);
                 }
 
@@ -116,26 +178,37 @@ class RazorpayWebhookService
             } finally {
                 $this->context->clear();
             }
+            return true;
         });
     }
 
     private function issueInvoiceIfConfigured(\App\Models\Tenant $tenant, BillingPayment $payment): void
     {
-        if (config('billing.demo_mode')) return;
+        if (config('billing.demo_mode') || $payment->currency !== 'INR' || $payment->amount_paise <= 0) return;
         $seller = config('billing.seller');
-        if (! in_array($seller['price_tax_mode'], ['inclusive', 'exclusive'], true)
-            || ! $seller['name'] || ! $seller['gstin'] || ! $seller['pan'] || ! $seller['address']
-            || ! $seller['state_code'] || ! $seller['gst_rate'] || ! $seller['sac_code'] || ! $tenant->state_code) return;
-        if ((float) $seller['gst_rate'] <= 0 || (float) $seller['gst_rate'] > 100) return;
+        $sellerStateCode = trim((string) ($seller['state_code'] ?? ''));
+        $buyerStateCode = trim((string) ($tenant->state_code ?? ''));
+        if (! $this->billing->taxDetailsConfigured() || $sellerStateCode === '' || $buyerStateCode === '') return;
         if (BillingInvoice::where('payment_id', $payment->id)->exists()) return;
 
         $gross = $payment->amount_paise;
         $rate = (float) $seller['gst_rate'];
-        $subtotal = $seller['price_tax_mode'] === 'exclusive'
-            ? (int) ($payment->subscription?->plan?->getAttribute($payment->subscription->billing_interval.'_price_paise') ?? round($gross * 100 / (100 + $rate)))
-            : (int) round($gross * 100 / (100 + $rate));
+        $subscription = $payment->subscription;
+        $priceAttribute = $subscription && in_array($subscription->billing_interval, ['monthly', 'yearly'], true)
+            ? $subscription->billing_interval.'_price_paise'
+            : null;
+        $subtotal = $priceAttribute ? $subscription->plan?->getAttribute($priceAttribute) : null;
+        if (! is_numeric($subtotal) || (int) $subtotal <= 0) return;
+        $subtotal = (int) $subtotal;
+        $expectedGross = $seller['price_tax_mode'] === 'exclusive'
+            ? $subtotal + (int) round($subtotal * $rate / 100)
+            : $subtotal;
+        if ($gross !== $expectedGross) return;
+        if ($seller['price_tax_mode'] === 'inclusive') {
+            $subtotal = (int) round($gross * 100 / (100 + $rate));
+        }
         $tax = $gross - $subtotal;
-        $taxBreakdown = (string) $seller['state_code'] === (string) $tenant->state_code
+        $taxBreakdown = $sellerStateCode === $buyerStateCode
             ? ['CGST' => (int) round($subtotal * ($rate / 2) / 100), 'SGST' => $tax - (int) round($subtotal * ($rate / 2) / 100)]
             : ['IGST' => $tax];
         BillingInvoice::create([
@@ -143,9 +216,44 @@ class RazorpayWebhookService
             'number' => 'SaaS-'.$payment->id,
             'subtotal_paise' => $subtotal, 'tax_paise' => $tax, 'total_paise' => $gross,
             'currency' => $payment->currency, 'tax_breakdown' => $taxBreakdown,
-            'seller_snapshot' => $seller + ['sac_code' => $seller['sac_code']],
-            'buyer_snapshot' => ['name' => $tenant->name, 'gstin' => $tenant->gstin, 'pan' => $tenant->pan, 'address' => $tenant->address, 'state_code' => $tenant->state_code],
+            'seller_snapshot' => array_merge($seller, ['state_code' => $sellerStateCode, 'sac_code' => $seller['sac_code']]),
+            'buyer_snapshot' => ['name' => $tenant->name, 'gstin' => $tenant->gstin, 'pan' => $tenant->pan, 'address' => $tenant->address, 'state_code' => $buyerStateCode],
             'issued_at' => $payment->paid_at ?? now(),
         ]);
+    }
+
+    private function providerTimestamp(mixed $timestamp): ?\Illuminate\Support\Carbon
+    {
+        if (is_int($timestamp)) {
+            $seconds = $timestamp;
+        } elseif (is_string($timestamp) && preg_match('/^\d+$/D', trim($timestamp))) {
+            $seconds = (int) trim($timestamp);
+        } else {
+            return null;
+        }
+
+        if ($seconds <= 0) return null;
+
+        try {
+            return now()->setTimestamp($seconds);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function providerAmount(mixed $amount): ?int
+    {
+        if (is_int($amount)) {
+            return $amount >= 0 ? $amount : null;
+        }
+
+        if (! is_string($amount) || ! preg_match('/^\d+$/D', trim($amount))) return null;
+        $normalized = trim($amount);
+        if (strlen($normalized) > strlen((string) PHP_INT_MAX)
+            || (strlen($normalized) === strlen((string) PHP_INT_MAX) && strcmp($normalized, (string) PHP_INT_MAX) > 0)) {
+            return null;
+        }
+
+        return (int) $normalized;
     }
 }

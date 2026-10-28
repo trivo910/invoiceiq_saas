@@ -17,7 +17,7 @@ The following describes checked-in migrations through Phase 4. Phase 3 changed a
 | `payments` | id, tenant_id FK, invoice FK, amount/date/mode/reference/notes, timestamps | existing invoice+payment_date index |
 | `tenant_invoice_sequences` | id, tenant_id FK, financial_year (`YYYY-YY`), next_number, timestamps | unique tenant_id+financial_year |
 | `plans` | code/name/description, nullable monthly/yearly INR price in paise, nullable invoice/member limits, nullable report/branding/API feature flags, Razorpay monthly/yearly plan IDs, active/sort fields | unique code |
-| `tenant_subscriptions` | tenant_id FK, plan_id FK, status, interval, unique Razorpay subscription ID, trial/period/grace/cancel/end timestamps, provider state event timestamp, provider metadata JSON | tenant/status index |
+| `tenant_subscriptions` | tenant_id FK, plan_id FK, status (`trialing`, `pending`, `active`, `past_due`, `paused`, `cancelled`, `completed`, `expired`; `checkout_failed` is a terminal initial-checkout history state excluded from entitlement selection), interval, unique Razorpay subscription ID, trial/period/grace/past-due start/cancel/end timestamps, provider state event timestamp, provider metadata JSON | tenant/status index |
 | `billing_events` | unique provider event ID, event type, nullable tenant FK, processed timestamp | unique provider_event_id |
 | `billing_payments` | tenant_id FK, nullable subscription FK, unique provider payment ID, amount/currency/status/method/paid timestamp/provider metadata | tenant/created index |
 | `billing_invoices` | tenant_id FK, nullable payment FK, unique number, subtotal/tax/tax breakdown/total/currency, seller/buyer JSON snapshots, issue timestamp | tenant/issued index |
@@ -46,7 +46,7 @@ Users remain global identity records. `tenant_user` supports multiple workspaces
 8. [x] Phase 4 foundation: plans/subscriptions/payments/invoices/events schema; new-account trials; checkout configuration; signed/idempotent webhook processing; billing history and read-only/usage enforcement.
 9. [ ] Phase 4 product configuration: populate approved prices/limits, seller tax details, grace behavior, downgrade/proration/refund policy, then run provider sandbox and invoice QA.
 
-Migration files: `2026_10_23_000001_create_tenants_and_scope_business_data.php`, `2026_10_23_000002_create_database_queue_tables.php`, `2026_10_23_000003_add_tenant_scoped_customer_gstin_unique.php`, `2026_10_23_000004_add_phase_two_auth_and_invitations.php`, `2026_10_26_000001_create_billing_tables.php`, `2026_10_26_000002_add_tax_breakdown_to_billing_invoices.php`, `2026_10_26_000003_make_plan_features_optional.php`, and `2026_10_26_000004_add_provider_state_timestamp_to_tenant_subscriptions.php`.
+Migration files: `2026_10_23_000001_create_tenants_and_scope_business_data.php`, `2026_10_23_000002_create_database_queue_tables.php`, `2026_10_23_000003_add_tenant_scoped_customer_gstin_unique.php`, `2026_10_23_000004_add_phase_two_auth_and_invitations.php`, `2026_10_26_000001_create_billing_tables.php`, `2026_10_26_000002_add_tax_breakdown_to_billing_invoices.php`, `2026_10_26_000003_make_plan_features_optional.php`, `2026_10_26_000004_add_provider_state_timestamp_to_tenant_subscriptions.php`, and `2026_10_27_000001_add_past_due_started_at_to_tenant_subscriptions.php`.
 
 ## Preflight and verification
 
@@ -55,4 +55,20 @@ On the configured local MySQL database before migration: 5 customers, 9 items, 1
 New generated invoice numbers use `PREFIX-YYYY-YY-NNNN` (for example `INV-2026-27-0001`) based on the tenant's configured FY start. Existing invoice numbers are not rewritten. SQLite is not the production database target; the migration and locking behavior were exercised against the configured local MySQL only.
 
 
-Phase 3 introduced no schema migration. Phase 4 adds migrations `2026_10_26_000001_create_billing_tables.php`, `2026_10_26_000002_add_tax_breakdown_to_billing_invoices.php`, `2026_10_26_000003_make_plan_features_optional.php`, and `2026_10_26_000004_add_provider_state_timestamp_to_tenant_subscriptions.php`. Feature tests run against a separate MySQL database named invoiceiq_test; the local development database is not used by the suite. The checked local data audit found zero cross-tenant invoice/customer, line/invoice, line/item, or payment/invoice links.
+Phase 3 introduced no schema migration. Phase 4 adds migrations `2026_10_26_000001_create_billing_tables.php`, `2026_10_26_000002_add_tax_breakdown_to_billing_invoices.php`, `2026_10_26_000003_make_plan_features_optional.php`, `2026_10_26_000004_add_provider_state_timestamp_to_tenant_subscriptions.php`, and `2026_10_27_000001_add_past_due_started_at_to_tenant_subscriptions.php`. Feature tests run against a separate MySQL database named invoiceiq_test; the local development database is not used by the suite. The checked local data audit found zero cross-tenant invoice/customer, line/invoice, line/item, or payment/invoice links.
+
+
+## Phase 5 schema
+
+Migration `2026_10_28_000001_create_superadmin_tables.php` adds platform-owned infrastructure (these tables do not use tenant scopes):
+
+| Table | Fields and relationships | Constraints |
+|---|---|---|
+| `super_admins` | name, unique email, hashed password, is_active, timestamps | Separate from tenant users; no default account |
+| `admin_audit_logs` | nullable super_admin_id/tenant_id FKs, action, target_type/id, reason, JSON details, IP, created_at | Actor/tenant deletion sets FK null; action/time indexes; application append-only |
+| `coupons` | unique normalized code, percent/fixed_paise type, positive integer value, active flag, optional start/expiry, timestamps | Percent <=100 validated; catalog-only, no checkout redemption |
+| `announcements` | title, plain-text body, active flag, optional start/expiry, timestamps | Escaped and date-filtered at display |
+
+The existing tenant status field now enforces suspension. Manual grants reuse tenant_subscriptions with an explicit paid-through deadline, no provider ID, and `provider_metadata.manual_grant=true`; no payment/invoice is synthesized. Original tenant-owned model schemas/scopes remain intact. Migration is reversible by dropping only the four new tables in reverse dependency order; rollback removes their platform data and should be rehearsed on a backup.
+
+Local preflight found the older Phase 4 past_due_started_at migration pending despite prior documentation; applied it before the Phase 5 migration. The isolated test DB already had that column. Phase 5 tables were applied to both local and test MySQL on 2026-10-28.

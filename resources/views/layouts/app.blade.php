@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Trivo - InvoiceIQ') — Trivo - InvoiceIQ</title>
-    <link rel="stylesheet" href="{{ asset('css/app.css?v=8') }}">
+    <link rel="stylesheet" href="{{ asset('css/app.css?v=9') }}">
     <style>
         /* ── Sidebar user panel ────────────────── */
         .sidebar-footer {
@@ -170,13 +170,17 @@
                 <span class="nav-label">GST Reports</span>
             </a>
 
-            {{-- Admin-only section --}}
-            @if(auth()->check() && auth()->user()->isAdmin())
-            <div class="nav-section">Admin</div>
+            @if(auth()->check() && auth()->user()->hasRole('owner'))
+            <div class="nav-section">Billing</div>
             <a href="{{ route('billing.index') }}" class="nav-item {{ request()->routeIs('billing.*') ? 'active' : '' }}" data-tooltip="Billing">
                 <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M1 6h14M4 10h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
                 <span class="nav-label">Billing</span>
             </a>
+            @endif
+
+            {{-- Admin-only section --}}
+            @if(auth()->check() && auth()->user()->isAdmin())
+            <div class="nav-section">Admin</div>
             <a href="{{ route('users.index') }}" class="nav-item {{ request()->routeIs('users.*') ? 'active' : '' }}" data-tooltip="Users">
                 <svg viewBox="0 0 16 16" fill="none">
                     <circle cx="6" cy="5" r="2.5" stroke="currentColor" stroke-width="1.3"/>
@@ -220,6 +224,16 @@
 
     {{-- Main --}}
     <main class="main">
+        @if(session('admin_impersonation'))
+            <div role="status" style="position:sticky;top:0;z-index:100;background:#fff2c7;padding:16px;border-bottom:2px solid #be7d12">
+                <strong>Read-only support impersonation</strong>
+                <span>Workspace {{ session('admin_impersonation.tenant_id') }}. Reason: {{ session('admin_impersonation.reason') }}. Expires {{ \Illuminate\Support\Carbon::createFromTimestamp(session('admin_impersonation.expires_at'))->format('H:i') }}.</span>
+                <form method="post" action="{{ route('superadmin.impersonation.stop') }}" style="display:inline">@csrf<button type="submit" class="btn btn-primary">Exit impersonation</button></form>
+            </div>
+        @endif
+        @foreach($platformAnnouncements ?? [] as $announcement)
+            <div role="status" style="padding:16px 28px;background:#eaf1ff;border-bottom:1px solid #cad9f3"><strong>{{ $announcement->title }}</strong><p style="white-space:pre-wrap">{{ $announcement->body }}</p></div>
+        @endforeach
         @if(session('success'))
             <div style="padding:0 28px;padding-top:16px;" class="flash-wrap">
                 <div class="flash flash-success">

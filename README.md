@@ -81,3 +81,10 @@ resources/views/
   dashboard.blade.php
 public/css/app.css           — Full professional CSS (no Tailwind dependency)
 ```
+
+
+## Platform administration
+
+After migrations, run `php artisan superadmin:create` from a trusted terminal. Enter the administrator name/email and a hidden password of at least 12 characters, then visit `/superadmin/login`. Platform accounts are separate from workspace users; no default administrator is seeded and workspace admin roles cannot sign in here.
+
+Phase 5 provides platform metrics, workspace controls, plan/coupon/announcement catalogs, audit review, and 15-minute read-only owner impersonation with an explicit exit. Coupon checkout redemption and provider-managed plan changes remain pending Phase 4 decisions/QA. See `docs/ai/SUPERADMIN_SPEC.md` for controls and limitations.

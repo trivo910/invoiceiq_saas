@@ -1,11 +1,11 @@
 <?php
 
 return [
-    'trial_days' => (int) env('BILLING_TRIAL_DAYS', 14),
+    'trial_days' => env('BILLING_TRIAL_DAYS', 14),
     'demo_mode' => filter_var(env('BILLING_DEMO_MODE', false), FILTER_VALIDATE_BOOLEAN)
         && in_array(env('APP_ENV', 'production'), ['local', 'testing'], true),
     'grace_days' => env('BILLING_GRACE_DAYS') !== null
-        ? (int) env('BILLING_GRACE_DAYS')
+        ? env('BILLING_GRACE_DAYS')
         : (filter_var(env('BILLING_DEMO_MODE', false), FILTER_VALIDATE_BOOLEAN)
             && in_array(env('APP_ENV', 'production'), ['local', 'testing'], true) ? 7 : null),
     'subscription_cycle_count' => [

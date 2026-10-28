@@ -8,6 +8,7 @@ use App\Support\TenantContext;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 
 class WorkspaceRegistrationService
 {
@@ -17,7 +18,12 @@ class WorkspaceRegistrationService
 
     public function register(array $data): User
     {
-        return DB::transaction(function () use ($data) {
+        $trialDays = filter_var(config('billing.trial_days', 14), FILTER_VALIDATE_INT);
+        if ($trialDays === false || $trialDays < 0) {
+            throw new InvalidArgumentException('BILLING_TRIAL_DAYS must be a non-negative integer.');
+        }
+
+        return DB::transaction(function () use ($data, $trialDays) {
             $user = User::create([
                 'name' => $data['name'], 'email' => $data['email'],
                 'password' => Hash::make($data['password']), 'role' => 'admin',
@@ -26,7 +32,7 @@ class WorkspaceRegistrationService
                 'name' => $data['workspace'],
                 'slug' => Str::slug($data['workspace']).'-'.Str::lower(Str::random(6)),
                 'status' => 'active',
-                'trial_ends_at' => now()->addDays((int) config('billing.trial_days', 14)),
+                'trial_ends_at' => now()->addDays($trialDays),
             ]);
             $tenant->users()->attach($user->id, ['role' => 'owner']);
             $trial = \App\Models\Plan::where('code', 'trial')->firstOrFail();

@@ -17,6 +17,8 @@ use App\Http\Controllers\BillingController;
 use App\Http\Controllers\RazorpayWebhookController;
 use Illuminate\Support\Facades\Route;
 
+require __DIR__.'/superadmin.php';
+
 Route::post('/webhooks/razorpay', RazorpayWebhookController::class)->middleware('throttle:120,1')->name('billing.webhook');
 
 // ── Guest-only (redirects authenticated users to /) ────────────
@@ -42,10 +44,10 @@ Route::middleware(['auth', 'tenant'])->group(function () {
 });
 
 Route::middleware(['auth', 'verified', 'tenant'])->group(function () {
-    Route::get('/billing', [BillingController::class, 'index'])->name('billing.index');
+    Route::get('/billing', [BillingController::class, 'index'])->middleware('role:owner')->name('billing.index');
     Route::post('/billing/plans/{plan}/checkout', [BillingController::class, 'checkout'])
-        ->middleware(['role:owner,admin', 'throttle:10,1'])->name('billing.checkout');
-    Route::get('/billing/invoices/{invoice}/download', [BillingController::class, 'invoice'])->name('billing.invoices.download');
+        ->middleware(['role:owner', 'throttle:10,1'])->name('billing.checkout');
+    Route::get('/billing/invoices/{invoice}/download', [BillingController::class, 'invoice'])->middleware('role:owner')->name('billing.invoices.download');
 });
 
 Route::post('/logout', [LoginController::class, 'destroy'])
@@ -111,16 +113,16 @@ Route::middleware(['auth', 'verified', 'tenant', 'onboarded'])->group(function (
     Route::get('reports/gst/export', [GstReportController::class, 'export'])->middleware('plan.feature:gst_reports')->name('reports.gst.export');
 
     // ── Admin-only ─────────────────────────────────────────────
-    Route::middleware(['role:owner,admin', 'subscription'])->group(function () {
+    Route::middleware('role:owner,admin')->group(function () {
         Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');
-        Route::post('settings', [SettingsController::class, 'update'])->name('settings.update');
-        Route::post('settings/logo', [SettingsController::class, 'uploadLogo'])->name('settings.logo.upload');
-        Route::delete('settings/logo', [SettingsController::class, 'removeLogo'])->name('settings.logo.remove');
-        Route::post('settings/test-email', [SettingsController::class, 'testEmail'])->name('settings.test-email');
+        Route::post('settings', [SettingsController::class, 'update'])->middleware('subscription')->name('settings.update');
+        Route::post('settings/logo', [SettingsController::class, 'uploadLogo'])->middleware('subscription')->name('settings.logo.upload');
+        Route::delete('settings/logo', [SettingsController::class, 'removeLogo'])->middleware('subscription')->name('settings.logo.remove');
+        Route::post('settings/test-email', [SettingsController::class, 'testEmail'])->middleware('subscription')->name('settings.test-email');
 
         Route::get('users', [UsersController::class, 'index'])->name('users.index');
-        Route::post('users', [UsersController::class, 'store'])->middleware(['throttle:10,1', 'subscription', 'plan.limit:members'])->name('users.store');
-        Route::patch('users/{user}/role', [UsersController::class, 'updateRole'])->name('users.role');
-        Route::delete('users/{user}', [UsersController::class, 'destroy'])->name('users.destroy');
+        Route::post('users', [UsersController::class, 'store'])->middleware(['subscription', 'throttle:10,1'])->name('users.store');
+        Route::patch('users/{user}/role', [UsersController::class, 'updateRole'])->middleware('subscription')->name('users.role');
+        Route::delete('users/{user}', [UsersController::class, 'destroy'])->middleware('subscription')->name('users.destroy');
     });
 });

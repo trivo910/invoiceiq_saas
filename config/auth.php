@@ -8,6 +8,7 @@ return [
     ],
 
     'guards' => [
+        'superadmin' => ['driver' => 'session', 'provider' => 'super_admins'],
         'web' => [
             'driver'   => 'session',
             'provider' => 'users',
@@ -15,6 +16,7 @@ return [
     ],
 
     'providers' => [
+        'super_admins' => ['driver' => 'eloquent', 'model' => App\Models\SuperAdmin::class],
         'users' => [
             'driver' => 'eloquent',
             'model'  => App\Models\User::class,

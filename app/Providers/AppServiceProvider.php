@@ -18,5 +18,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('delete-records', fn ($user) => $user->hasRole(['owner', 'admin']));
         Paginator::useBootstrapFive();
         Paginator::defaultView('partials.pagination');
+        \Illuminate\Support\Facades\View::composer('layouts.app', function ($view) {
+            $view->with('platformAnnouncements', \App\Models\Announcement::visible()->latest('id')->get());
+        });
     }
 }

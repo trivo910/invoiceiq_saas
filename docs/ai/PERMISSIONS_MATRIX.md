@@ -13,7 +13,7 @@ Tenant roles are enforced against the active `tenant_user.role` membership. The 
 | View/export GST reports | Yes | Yes | Yes | Configurable; default yes | Yes (read-only) |
 | Edit company, GST, logo, bank, numbering settings | Yes | Yes | No | No | No |
 | Invite/manage team and roles | Yes | Yes | No | No | No |
-| Manage billing, plans, payment methods | Yes | No | No | No | No |
+| View plan status, payment history, and subscription invoices; manage billing/checkout | Yes | No | No | No | No |
 | Delete/recover workspace | Yes | No | No | No | No |
 | Use super-admin tenant/plan controls | No | No | No | No | No |
 
@@ -22,3 +22,10 @@ Implemented Gates: `manage-workspace` (owner/admin), `write-records` (owner/admi
 ## Current behavior observed
 
 All verified workspace roles can read core lists and GST reports. Owner/admin/accountant/staff can create and edit invoices, customers, items, record payments, and send invoices; only owner/admin can delete records, edit settings, or manage members. Members and invitations are scoped to the active workspace. GST report export remains available to all roles as read-only access.
+
+
+## Phase 5 platform role
+
+A separate `superadmin` guard authenticates platform accounts from `super_admins`. No tenant role, including owner or legacy global admin, grants platform access. Platform accounts can read platform metrics/directory/audit, manage catalogs, and apply audited tenant actions with reasons. Login and mutations are throttled; inactive platform accounts are rejected at login and each protected request.
+
+Owner impersonation is explicitly read-only: allowed core lists/search, invoice PDF, reports/exports and logo reads retain normal tenant/plan checks. Billing, settings, membership/account endpoints, admin controls, and all mutations are denied. Explicit exit and admin logout remain available. Tenant identity/workspace is restored on end or request-time expiry/revocation.

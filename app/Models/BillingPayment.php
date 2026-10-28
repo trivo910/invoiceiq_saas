@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use App\Support\TenantContext;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Validation\ValidationException;
@@ -16,8 +17,15 @@ class BillingPayment extends Model
     protected static function booted(): void
     {
         static::saving(function (self $payment): void {
-            if ($payment->subscription_id && ! TenantSubscription::whereKey($payment->subscription_id)->exists()) {
-                throw ValidationException::withMessages(['subscription_id' => 'The subscription is not available in this workspace.']);
+            $tenantId = app(TenantContext::class)->id();
+            if (! $tenantId || ($payment->tenant_id !== null && (int) $payment->tenant_id !== $tenantId)) {
+                throw ValidationException::withMessages(['tenant_id' => 'The payment must belong to the active workspace.']);
+            }
+            if ($payment->subscription_id) {
+                $subscription = TenantSubscription::whereKey($payment->subscription_id)->first();
+                if (! $subscription || (int) $subscription->tenant_id !== $tenantId) {
+                    throw ValidationException::withMessages(['subscription_id' => 'The subscription is not available in this workspace.']);
+                }
             }
         });
     }

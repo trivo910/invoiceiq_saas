@@ -132,6 +132,13 @@ body {
 .card-title    { font-size: 15px; font-weight: 600; color: var(--t1); }
 .card-body     { padding: 24px; }
 
+/* Billing plan cards keep descriptions and checkout actions inside their grid columns. */
+.billing-plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 16px; }
+.billing-plan-card { min-width: 0; border: 1px solid var(--bdr); border-radius: 12px; padding: 16px; overflow-wrap: anywhere; }
+.billing-plan-card h3 { margin-bottom: 8px; }
+.billing-plan-card form { min-width: 0; margin-top: 8px; }
+.billing-plan-card .btn { width: 100%; min-height: 42px; justify-content: center; white-space: normal; text-align: center; }
+
 /* ── Stat cards ──────────────────────────────────────────────── */
 .stat-grid    { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
 .stat-card    { background: var(--surface); border: 1px solid var(--bdr); border-radius: var(--radius-lg); padding: 22px 24px; }

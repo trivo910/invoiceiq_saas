@@ -19,7 +19,7 @@ class CheckPlanFeature
 
         // Null means this entitlement has not been decided/configured yet; false is an explicit denial.
         if ($plan->getAttribute($feature) === false) {
-            return redirect()->route('billing.index')->with('billing_feature', 'This feature is not included in your configured plan.');
+            return \App\Support\PlanRestrictionResponse::make($request, 'billing_feature', 'This feature is not included in your configured plan.');
         }
         return $next($request);
     }

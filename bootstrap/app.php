@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo('/login');
         $middleware->redirectUsersTo('/');
         $middleware->alias([
+            'superadmin' => \App\Http\Middleware\RequireSuperAdmin::class,
             'role' => \App\Http\Middleware\CheckRole::class,
             'tenant' => \App\Http\Middleware\ResolveTenant::class,
             'onboarded' => \App\Http\Middleware\EnsureOnboardingComplete::class,
@@ -22,6 +23,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'plan.feature' => \App\Http\Middleware\CheckPlanFeature::class,
         ]);
         $middleware->validateCsrfTokens(except: ['webhooks/razorpay']);
+        $middleware->web(append: [\App\Http\Middleware\EnforceImpersonation::class]);
+        $middleware->appendToPriorityList(\Illuminate\Session\Middleware\StartSession::class, \App\Http\Middleware\EnforceImpersonation::class);
+        $middleware->prependToPriorityList(\Illuminate\Routing\Middleware\SubstituteBindings::class, \App\Http\Middleware\RequireSuperAdmin::class);
         $middleware->appendToPriorityList(
             \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
             \App\Http\Middleware\ResolveTenant::class

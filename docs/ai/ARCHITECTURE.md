@@ -31,3 +31,10 @@ Phase 1 must create one default tenant and associate all existing business data 
 ## Architecture boundaries
 
 The business database remains MySQL for target shared hosting and production. Existing GST math and the inline Blade/vanilla-JS workflow are protected. Do not introduce a frontend framework or rewrite the app.
+
+
+## Phase 5 implementation
+
+Platform routes live in `routes/superadmin.php` under `/superadmin`, authenticated by the separate SuperAdmin provider/guard. RequireSuperAdmin rechecks active platform identity and audits access before binding. Catalog/TenantAction Form Requests validate allowlisted fields. SuperAdminService owns authorized aggregates, temporary scoped tenant work and transactional mutations/audits. ImpersonationService and web middleware enforce owner selection, read-only route allowlist, workspace pinning, expiry/revocation and session restoration. The tenant layout displays persistent support status and visible escaped platform announcements.
+
+Platform identity, audit, coupon and announcement records use four separate infrastructure tables. Interactive console provisioning avoids default credentials. The implementation adds no frontend framework, queue daemon, external runtime dependency or production billing assumptions. Provider changes/discount redemption remain a Phase 4 boundary.

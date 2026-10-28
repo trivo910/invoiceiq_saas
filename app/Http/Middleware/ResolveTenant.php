@@ -20,6 +20,7 @@ class ResolveTenant
         $tenant = $selectedId ? $memberships?->where('tenants.id', $selectedId)->first() : null;
         $tenant ??= $memberships?->orderBy('tenants.id')->first();
         abort_unless($tenant, 403, 'Your account is not associated with a workspace.');
+        abort_unless($tenant->status === 'active', 403, 'This workspace is suspended. Contact support.');
 
         $this->context->set($tenant);
         try {

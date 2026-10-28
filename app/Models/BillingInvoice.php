@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use App\Support\TenantContext;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Validation\ValidationException;
@@ -19,8 +20,15 @@ class BillingInvoice extends Model
     protected static function booted(): void
     {
         static::saving(function (self $invoice): void {
-            if ($invoice->payment_id && ! BillingPayment::whereKey($invoice->payment_id)->exists()) {
-                throw ValidationException::withMessages(['payment_id' => 'The payment is not available in this workspace.']);
+            $tenantId = app(TenantContext::class)->id();
+            if (! $tenantId || ($invoice->tenant_id !== null && (int) $invoice->tenant_id !== $tenantId)) {
+                throw ValidationException::withMessages(['tenant_id' => 'The invoice must belong to the active workspace.']);
+            }
+            if ($invoice->payment_id) {
+                $payment = BillingPayment::whereKey($invoice->payment_id)->first();
+                if (! $payment || (int) $payment->tenant_id !== $tenantId) {
+                    throw ValidationException::withMessages(['payment_id' => 'The payment is not available in this workspace.']);
+                }
             }
         });
     }

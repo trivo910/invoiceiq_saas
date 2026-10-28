@@ -1408,3 +1408,7 @@ Stack trace:
 #66 {main}
 "} 
 [2026-10-23 16:35:36] local.WARNING: Verification email could not be resent. {"user_id":2,"exception":"Symfony\\Component\\Mailer\\Exception\\TransportException"} 
+[2026-10-28 12:30:26] testing.WARNING: Razorpay webhook reused a payment ID bound to another billing record. {"event_id":"evt_conflicting_payment_binding","provider_payment_id":"pay_shared_conflict","tenant_id":5783,"subscription_id":6168} 
+[2026-10-28 12:30:27] testing.WARNING: Razorpay webhook contained conflicting subscription IDs. {"event_id":"evt_subscription_entity_mismatch","tenant_id":5784,"subscription_id":6169} 
+[2026-10-28 17:09:05] testing.WARNING: Razorpay webhook reused a payment ID bound to another billing record. {"event_id":"evt_conflicting_payment_binding","provider_payment_id":"pay_shared_conflict","tenant_id":5888,"subscription_id":6282} 
+[2026-10-28 17:09:06] testing.WARNING: Razorpay webhook contained conflicting subscription IDs. {"event_id":"evt_subscription_entity_mismatch","tenant_id":5889,"subscription_id":6283} 

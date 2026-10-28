@@ -19,10 +19,7 @@ class EnsureSubscriptionWritable
         $tenant = $this->context->current();
         abort_unless($tenant, 403);
         if (! $this->billing->canWrite($tenant)) {
-            if ($request->expectsJson()) {
-                return response()->json(['message' => 'This workspace is read-only. Review billing to restore changes.'], 403);
-            }
-            return redirect()->route('billing.index')->with('billing_read_only', 'This workspace is read-only. Review billing to restore changes.');
+            return \App\Support\PlanRestrictionResponse::make($request, 'billing_read_only', 'This workspace is read-only.');
         }
         return $next($request);
     }
