@@ -8,7 +8,7 @@ Use this tick-box list during implementation and before release. Phase 0 records
 - [x] Raw dashboard SQL, GST joins, cache keys, route binding, AJAX, reports/exports, PDFs, and authorized logo delivery include tenant context.
 - [x] Two-tenant tests cover cross-tenant reads, updates, payments, report output, exports, and logos.
 - [x] Cross-tenant customer/item IDs and invoice line/payment links are rejected.
-- [ ] Queued jobs and emails restore tenant context explicitly.
+- [x] Phase 6 invoice mail/export jobs restore explicit tenant context and recheck membership.
 
 ## Web and account security
 
@@ -49,3 +49,14 @@ Use this tick-box list during implementation and before release. Phase 0 records
 - [x] Coupon validation and escaped/date-scoped announcements; immutable referenced plan price contracts and protected system/referenced plan deletion.
 
 These checks do not complete Phase 7 business-record audit coverage, MFA/recovery UI, production deployment verification, or Phase 4 provider QA. Audit immutability is at the application layer, not tamper-proof database storage.
+
+
+## Phase 6 verified controls
+
+- [x] Explicit scalar tenant IDs and context restoration for mail/export jobs and streamed CSVs; foreign job IDs cannot resolve records.
+- [x] Hash-only random public invoice tokens, bounded expiry/revocation, finalized/active-tenant checks and read-only public endpoint with no-store/no-referrer/noindex headers.
+- [x] Encrypted mail payload/history and generic transport failures; SMTP credentials never enter serialized jobs or exports.
+- [x] Private owner export routes, membership rechecks, expiry/pruning, validated file prefixes and spreadsheet-formula-safe CSVs.
+- [x] PDF template/color allowlists and shared tenant-scoped rendering; private logos and protected GST markup retained.
+
+Actual SMTP delivery, deployed cron, production HTTPS, large-export runtime/crash recovery and broader Phase 7 hardening remain manual/launch checks. SMTP is at-least-once on a crash after acceptance, not exactly-once.

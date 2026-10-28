@@ -18,6 +18,7 @@ use App\Http\Controllers\RazorpayWebhookController;
 use Illuminate\Support\Facades\Route;
 
 require __DIR__.'/superadmin.php';
+require __DIR__.'/workflows.php';
 
 Route::post('/webhooks/razorpay', RazorpayWebhookController::class)->middleware('throttle:120,1')->name('billing.webhook');
 
@@ -78,7 +79,7 @@ Route::middleware(['auth', 'verified', 'tenant', 'onboarded'])->group(function (
         Route::delete('invoices/{invoice}', [InvoiceController::class, 'destroy'])->middleware('can:delete-records')->name('invoices.destroy');
         Route::patch('invoices/{invoice}/status', [InvoiceController::class, 'updateStatus'])->name('invoices.status');
         Route::post('invoices/{invoice}/payment', [InvoiceController::class, 'recordPayment'])->name('invoices.payment');
-        Route::post('invoices/{invoice}/email', [InvoiceController::class, 'sendEmail'])->name('invoices.email');
+        Route::post('invoices/{invoice}/email', [InvoiceController::class, 'sendEmail'])->middleware('throttle:10,1')->name('invoices.email');
     });
 
     // ── Customers ──────────────────────────────────────────────

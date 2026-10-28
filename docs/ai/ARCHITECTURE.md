@@ -38,3 +38,10 @@ The business database remains MySQL for target shared hosting and production. Ex
 Platform routes live in `routes/superadmin.php` under `/superadmin`, authenticated by the separate SuperAdmin provider/guard. RequireSuperAdmin rechecks active platform identity and audits access before binding. Catalog/TenantAction Form Requests validate allowlisted fields. SuperAdminService owns authorized aggregates, temporary scoped tenant work and transactional mutations/audits. ImpersonationService and web middleware enforce owner selection, read-only route allowlist, workspace pinning, expiry/revocation and session restoration. The tenant layout displays persistent support status and visible escaped platform announcements.
 
 Platform identity, audit, coupon and announcement records use four separate infrastructure tables. Interactive console provisioning avoids default credentials. The implementation adds no frontend framework, queue daemon, external runtime dependency or production billing assumptions. Provider changes/discount redemption remain a Phase 4 boundary.
+
+
+## Phase 6 implementation
+
+`routes/workflows.php` adds public capability and authenticated workflow routes. WorkspaceWorkflow queues encrypted delivery records and generates hash-only sharing capabilities; InvoicePdf centralizes safe scoped PDF settings/template selection. TenantWork scopes jobs/callbacks explicitly. SendInvoice uses a fresh tenant mail transport or application fallback; BuildAccountExport creates a private data ZIP from WorkspaceExport allowlists. Model hooks guard invoice/actor/tenant links. Streamed CSVs set context inside callbacks after request middleware teardown.
+
+The scheduler runs a bounded database worker and daily tenant-path-validated pruning; no new external runtime service is required. Existing invoice/finalise email actions now report queued status and expose worker outcomes. Request-time GST/invoice calculation behavior is unchanged. Platform impersonation remains read-only and does not gain these new mutations. See WORKFLOWS.md for current operation and limitations.

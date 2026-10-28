@@ -45,3 +45,12 @@ Run migrations before using platform routes. The Phase 5 migration only adds sup
 Create an administrator from a trusted terminal with `php artisan superadmin:create`, then sign in at `/superadmin/login`. The command prompts for a hidden password (minimum 12 characters); no seeded platform credential or new environment secret exists. Existing SMTP/session configuration remains unchanged. Preserve HTTPS, secure cookies and protected storage for production. Protect/retain platform audit records with database backups.
 
 Manually review directory/filtering, reasoned status/trial/local grants, catalog CRUD and announcements, then start/exit/expire read-only impersonation at desktop/mobile widths. Do not use manual grants to bypass provider billing rules. Coupon redemption/provider changes remain unavailable. Review rollback on staging with backups; dropping Phase 5 tables removes platform accounts/audit/catalog data. Gateway support resolution remains independent.
+
+
+## Phase 6 queue and workflow operation
+
+Run migrations before deploying workflow routes; Phase 6 tables were applied on local/test MySQL. Require PHP ZipArchive (already exercised locally), writable tenant-private storage and the existing database queue. Retain APP_KEY in protected backups: it decrypts invoice delivery payloads. No new environment variable or dependency installation is required; `.env.example` and setup already configure the database queue/migrations.
+
+Configure the host's cron to invoke `php artisan schedule:run` every minute. The schedule starts a bounded `queue:work database --stop-when-empty --max-time=50 --tries=3 --timeout=60` with overlap protection and daily `workflows:prune`. Inspect `php artisan schedule:list` without sending mail. These schedule definitions were verified locally; actual host cron/process limits/SMTP delivery remain unverified. Queue retries can duplicate SMTP acceptance after a crash before DB commit.
+
+Use a reachable HTTPS application host for public invoice links, keep tenant directories outside public storage and disable production debug output. Workspace ZIP downloads expire after 24 hours; the prune command deletes expired files. Test large workspace runtime/memory and crash recovery on staging. See WORKFLOWS.md for the exact sharing/permission/export boundaries. Phase 4 Razorpay support and production billing configuration remain unresolved.

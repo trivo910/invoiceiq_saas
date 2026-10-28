@@ -163,6 +163,9 @@
             </a>
 
             <div class="nav-section">Reports</div>
+            @if(auth()->check() && auth()->user()->hasRole(['owner', 'admin', 'accountant']))
+            <a href="{{ route('exports.index') }}" class="nav-item" data-tooltip="Exports"><span class="nav-label">Data exports</span></a>
+            @endif
             <a href="{{ route('reports.gst') }}" class="nav-item {{ request()->routeIs('reports.*') ? 'active' : '' }}" data-tooltip="GST Reports">
                 <svg viewBox="0 0 16 16" fill="none">
                     <path d="M3 13V7M7 13V4M11 13V9M15 13H1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>

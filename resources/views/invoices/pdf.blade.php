@@ -7,6 +7,12 @@
 * { margin: 1; padding: 1; box-sizing: border-box; }
 body { font-family: 'DejaVu Sans', sans-serif; font-size: 10px; color: #1a1a1a; line-height: 1.5; }
 </style>
+@if($accentTemplate ?? false)
+<style>
+body { border-top: 5px solid {{ $brandColor }}; padding-top: 14px; }
+thead th { color: {{ $brandColor }} !important; }
+</style>
+@endif
 </head>
 <body>
 

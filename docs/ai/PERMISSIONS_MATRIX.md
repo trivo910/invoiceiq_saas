@@ -29,3 +29,13 @@ All verified workspace roles can read core lists and GST reports. Owner/admin/ac
 A separate `superadmin` guard authenticates platform accounts from `super_admins`. No tenant role, including owner or legacy global admin, grants platform access. Platform accounts can read platform metrics/directory/audit, manage catalogs, and apply audited tenant actions with reasons. Login and mutations are throttled; inactive platform accounts are rejected at login and each protected request.
 
 Owner impersonation is explicitly read-only: allowed core lists/search, invoice PDF, reports/exports and logo reads retain normal tenant/plan checks. Billing, settings, membership/account endpoints, admin controls, and all mutations are denied. Explicit exit and admin logout remain available. Tenant identity/workspace is restored on end or request-time expiry/revocation.
+
+
+## Phase 6 workflows
+
+- Owner/admin/accountant/staff: inspect per-invoice sharing/email history; create/revoke finalized-invoice links and send email while subscription writes are allowed.
+- Owner/admin/accountant: read tenant CSV exports, including when subscription writes have expired. Staff/viewer cannot export.
+- Owner only: request/download private workspace ZIP exports. Worker and download independently recheck ownership; expiry and cross-tenant binding fail closed. Read-only subscription mode permits data export.
+- Owner/admin: advanced brand/template updates require write access and custom_branding entitlement. Existing company/logo permissions remain.
+- Public bearer: view one finalized invoice PDF through a valid, unexpired, unrevoked token for an active tenant. No mutation, billing, membership or export access.
+- Platform read-only impersonation retains its existing route allowlist: new share/mail/export/settings actions are not implicitly granted.

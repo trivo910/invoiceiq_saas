@@ -2,11 +2,11 @@
 
 ## Current position
 
-- **Phase:** 5 - Super-admin (implemented; Phase 4 provider/commercial work remains open)
-- **Status:** User authorized Phase 5 while the Razorpay support ticket is pending. Separate platform login/guard, dashboard/directory, audited status/trial/manual-plan controls, catalog management, announcements, and time-bounded read-only owner impersonation are implemented. Phase 4 provider-backed QA and production billing decisions remain unresolved. No Phase 6 work started.
-- **Code changes:** Phase 5 super-admin tables/model/guard, controllers, services, requests, middleware, Blade views, console provisioning and tests, plus completed prior foundations.
-- **Migration state:** Phase 5 tables applied to local MySQL and isolated invoiceiq_test. Local preflight also found the prior Phase 4 past_due_started_at migration pending; that additive migration was applied locally. Test database already had it.
-- **Automated tests:** Full MySQL suite passes: 77 tests, 632 assertions (2026-10-28). Initial focused super-admin run passed 12 tests/118 assertions before three further security/metric tests were added. All PHP syntax checks, platform route registration and Blade compilation passed. Provider-backed gateway QA is still separate.
+- **Phase:** 6 - Branding and SaaS workflows (implemented; Phase 4 provider/commercial work remains open)
+- **Status:** Continued into Phase 6 after Phase 5. Added advanced invoice branding, expiring/revocable view-only PDF links, encrypted email-delivery history and tenant-aware database jobs, CSV downloads and private owner workspace exports. Razorpay support/production billing decisions remain pending. No Phase 7 work started.
+- **Code changes:** Phase 6 workflow models/migration, tenant-context helper, shared PDF renderer, queued mail/export jobs and services, protected public/tenant routes, workflow pages/branding controls, pruning/scheduler and security regressions. Existing GST math/inline invoice calculations are unchanged.
+- **Migration state:** Phase 6 workflow tables applied to local MySQL and invoiceiq_test on 2026-10-28. Prior Phase 4/5 migrations are applied.
+- **Automated tests:** Full MySQL suite passes: 90 tests, 708 assertions (2026-10-28). Initial focused workflow suite passed 11 tests, 70 assertions; two additional worker-boundary tests are included in the final full suite. PHP syntax/Blade/route checks passed. Real SMTP, browser review and deployed cron remain manual verification; no actual external email or provider payment was sent.
 
 ## Completed
 
@@ -97,7 +97,7 @@
 
 ## In progress / next
 
-1. Provision a platform administrator with `php artisan superadmin:create` and manually review the platform screens; Phase 6 remains a separate next scope.
+1. Provision a platform administrator with `php artisan superadmin:create` and manually review the platform screens; Phase 6 workflow/operator review is also pending; Phase 7 remains a separate next scope.
 2. Replace local demo assumptions with approved prices/limits, seller tax invoice details, grace duration, downgrade behavior, proration, and refund decisions; then verify Razorpay sandbox events and production tax invoices.
 3. Before deploying to another installation, back up its database, preflight actual legacy data/migration drift, then rehearse migrations on staging.
 
@@ -105,7 +105,7 @@
 
 - Only the configured local MySQL business dataset was inspected; it had no invoices or payments. Other installations with invoice history need backup and preflight.
 - Same-tenant relationships are enforced by application validation/model hooks; the schema does not yet have composite tenant foreign keys.
-- A full workspace switcher and tenant-aware queued business jobs remain later work.
+- A full workspace switcher remains later work; Phase 6 mail/export jobs now carry explicit tenant IDs and restore context.
 - Email delivery defaults to the `log` mailer; production must configure SMTP credentials and sender identity.
 - Legacy public logos should be moved after upgrade with `php artisan tenants:migrate-legacy-logos`.
 - Paid checkout remains disabled in demo mode and requires provider plan IDs, credentials, recurring cycle count, and production billing configuration after demo mode is off; invoice issuance is also blocked in demo mode and requires seller/GST/SAC fields and tenant state. Sandbox credentials are now present in local `.env`, but they have not been used for an account-backed API request or checkout; no public HTTPS webhook URL has been verified.
@@ -113,7 +113,7 @@
 
 ## Resume point
 
-Read `README.md`, this file, `TENANCY_RULES.md`, `CODING_STANDARDS.md`, `DATABASE_SCHEMA.md`, and `ROADMAP.md`. Phases 1-3 and Phase 5 implementation are complete. Phase 4 foundation is implemented; finish provider QA after support resolves account access and configure production values when supplied. Migrate other installations only after backup, preflight, and staging rehearsal.
+Read `README.md`, this file, `TENANCY_RULES.md`, `CODING_STANDARDS.md`, `DATABASE_SCHEMA.md`, `ROADMAP.md`, and `WORKFLOWS.md`. Phases 1-3, 5 and 6 implementation are ready. Complete operator provisioning/manual reviews and Phase 4 provider/commercial work when inputs arrive. Phase 7 is not started. Upgrade other installations only after backup, preflight and staging rehearsal.
 
 ### Latest continuation — 2026-10-27
 
@@ -192,3 +192,13 @@ User confirmed a Razorpay support ticket has been submitted. Gateway provider ch
 - Added 15-minute owner-only read-only impersonation, tenant binding, persistent exit banner, actor/target/reason/start/end audit, expiry/revocation checks and original identity restoration.
 - Enforced suspension at tenant resolution and billing write checks. Existing GST/invoice workflow is unchanged.
 - Applied local/test migrations and passed full suite (77 tests, 632 assertions), syntax, routes and Blade compilation. No Phase 6 work started. Actual browser review/first admin provisioning remain operator steps, not claimed as executed.
+
+
+### Phase 6 implementation - 2026-10-28
+
+- Added classic/accent invoice PDF selection and validated brand color under the custom_branding entitlement; private logos and existing GST/line/totals markup remain intact. Company setting edits now synchronize root tenant identity fields.
+- Added hashed 256-bit invoice capabilities with 1-90 day expiry, revocation, finalized-invoice checks, suspension checks, no-store/no-referrer/noindex headers and no mutation surface.
+- Added encrypted email-delivery records and scalar-ID jobs that restore tenant context and recheck sender membership. Existing email/finalise actions now queue, retain ZIP/PDF attachment behavior and mark a draft sent only after success. Delivery status is visible per invoice.
+- Added role-protected tenant CSVs with spreadsheet-formula protection and owner-only queued private ZIP exports including business records, safe settings/member/billing data and logo. Secret/token fields are excluded. Exports expire after 24 hours and have a scoped pruning command.
+- Added short database queue-worker scheduling and daily pruning; only schedule definitions were inspected, no real queued email was executed.
+- Applied Phase 6 migration locally/on test DB. Full suite passed: 90 tests, 708 assertions. Manual browser, SMTP delivery and hosting cron review remain unverified. Phase 7 not started.

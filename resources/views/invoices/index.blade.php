@@ -75,6 +75,7 @@
                                     <div style="display:flex;gap:5px;justify-content:center;">
                                         <a href="{{ route('invoices.edit', $inv) }}" class="btn btn-xs">Edit</a>
                                         <a href="{{ route('invoices.pdf', $inv) }}" class="btn btn-xs" target="_blank">PDF</a>
+                                        @can('write-records')<a href="{{ route('invoices.activity', $inv) }}" class="btn btn-xs">Share / Email</a>@endcan
                                         <form method="POST" action="{{ route('invoices.destroy', $inv) }}"
                                               onsubmit="return confirm('Delete {{ $inv->number }}?')">
                                             @csrf @method('DELETE')

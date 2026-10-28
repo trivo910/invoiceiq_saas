@@ -72,3 +72,18 @@ Migration `2026_10_28_000001_create_superadmin_tables.php` adds platform-owned i
 The existing tenant status field now enforces suspension. Manual grants reuse tenant_subscriptions with an explicit paid-through deadline, no provider ID, and `provider_metadata.manual_grant=true`; no payment/invoice is synthesized. Original tenant-owned model schemas/scopes remain intact. Migration is reversible by dropping only the four new tables in reverse dependency order; rollback removes their platform data and should be rehearsed on a backup.
 
 Local preflight found the older Phase 4 past_due_started_at migration pending despite prior documentation; applied it before the Phase 5 migration. The isolated test DB already had that column. Phase 5 tables were applied to both local and test MySQL on 2026-10-28.
+
+
+## Phase 6 schema
+
+Additive migration `2026_10_28_000002_create_workspace_workflow_tables.php` adds:
+
+| Table | Fields | Boundary |
+|---|---|---|
+| invoice_share_links | tenant/invoice/creator FKs, unique 64-character token_hash, expiry/revocation, timestamps | Hash only; tenant-scoped admin access, exact capability lookup for public reads |
+| invoice_deliveries | tenant/invoice/requester FKs, status, encrypted mediumtext payload, attempts, sent_at, timestamps | Scalar queue IDs; encrypted recipient/message data, no transport secrets in jobs |
+| account_exports | tenant/requester FKs, status, private path, expiry, timestamps | Owner-only generation/download, tenant path prefix validation |
+
+All three models use BelongsToTenant. Invoice-linked saves reject foreign invoices and tenant reassignment; requester checks prevent foreign actors. Export requesters are workspace owners at creation and cannot be reassigned; worker/download checks re-evaluate owner permissions. Tenant/invoice deletion cascades workflow rows; referenced user deletion is restricted. Rollback drops only these new tables and their workflow history; file cleanup requires operator handling.
+
+Brand color/template are tenant settings keys, not new columns. Company profile updates synchronize existing tenant identity fields. No original invoice/GST schema changed. Migration applied to local MySQL and invoiceiq_test on 2026-10-28.

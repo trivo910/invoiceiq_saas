@@ -56,9 +56,14 @@ class SettingsController extends Controller
             unset($data['smtp_password']);
         }
 
-        foreach ($data as $key => $value) {
-            Setting::set($key, $value);
-        }
+        \Illuminate\Support\Facades\DB::transaction(function () use ($data) {
+            foreach ($data as $key => $value) Setting::set($key, $value);
+            $profile = [];
+            foreach (['company_name' => 'name', 'company_gstin' => 'gstin', 'company_pan' => 'pan', 'company_state_code' => 'state_code', 'company_address' => 'address'] as $setting => $field) {
+                if (array_key_exists($setting, $data)) $profile[$field] = $data[$setting];
+            }
+            \App\Models\Tenant::whereKey(app(TenantContext::class)->id())->update($profile);
+        });
 
         return redirect()->route('settings.index')->with('success', 'Settings saved successfully.');
     }

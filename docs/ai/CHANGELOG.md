@@ -255,3 +255,14 @@ Added owner-only 15-minute read-only impersonation with tenant binding, reason, 
 Added `2026_10_28_000001_create_superadmin_tables.php`, platform models/services/controller/Form Requests/middleware/views/routes and SuperAdminFeatureTest. Updated auth/bootstrap/provider/tenant resolution/billing write guard/console routes/tenant layout and docs. Applied the additive Phase 5 migration on local MySQL and invoiceiq_test; local preflight also required applying the previously pending Phase 4 past_due_started_at migration. No data backfill, destructive migration or external provider mutation was performed.
 
 Validation: full suite **77 tests, 632 assertions**; PHP syntax checks pass; 14 platform routes register; all Blade views compile. First platform admin is not pre-seeded: run `php artisan superadmin:create`. Manual browser QA remains an operator step. Phase 4 support ticket and commercial decisions remain open; Phase 6 not started.
+
+
+## Phase 6 - 2026-10-28 - Branding and workspace workflows
+
+Added advanced invoice branding with classic/accent rendering from a shared PDF service, retaining GST calculation and invoice line/totals markup. Company profile saves synchronize tenant identity fields; advanced styling obeys custom_branding entitlement and private logo authorization remains unchanged.
+
+Added tenant-owned invoice_share_links (hash-only capability storage), encrypted invoice_deliveries and account_exports. Public finalized-invoice PDF links expire/revoke and fail closed on invalid/draft/cancelled/suspended records. New mail/export jobs serialize tenant/record IDs, restore context, recheck current membership/owner permissions and keep files private. Invoice email actions now queue and expose status rather than reporting delivery before SMTP succeeds. ZIP attachment behavior is preserved; temporary ZIPs use tenant-private paths.
+
+Added formula-safe tenant CSVs and owner ZIP exports with allowlisted workspace/settings/member/billing data and private logo; passwords, SMTP/API credentials, tokens and provider metadata are excluded. Added 24-hour export expiry, scoped pruning, bounded database worker/daily maintenance schedules and workflow UI. No external email/payment was sent during implementation.
+
+Applied additive migration `2026_10_28_000002_create_workspace_workflow_tables.php` to local MySQL and invoiceiq_test. New focused suite initially passed 11 tests/70 assertions; final full suite with added worker checks passed **90 tests, 708 assertions**. PHP syntax and Blade checks passed. Manual SMTP/browser/hosting cron review remains open. Updated progress/roadmap/testing/schema/permissions/tenancy/deployment/phase handoff and WORKFLOWS.md. Phase 4 support dependency remains; Phase 7 not started.

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\InvoiceMail;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Customer;
@@ -11,7 +10,6 @@ use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\UniqueConstraintViolationException;
-use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
 use Illuminate\Validation\Rule;
 use App\Support\TenantContext;
 use App\Support\DashboardCache;
@@ -105,7 +103,7 @@ class InvoiceController extends Controller
         DashboardCache::forget();
 
         if ($request->boolean('send_email')) {
-            return $this->handleEmailSend($request, $invoice, 'Invoice created and emailed to');
+            return $this->handleEmailSend($request, $invoice, 'Invoice created; email queued for');
         }
 
         return redirect()->route('invoices.index')->with('success', 'Invoice created successfully.');
@@ -143,7 +141,7 @@ class InvoiceController extends Controller
         DashboardCache::forget();
 
         if ($request->boolean('send_email')) {
-            return $this->handleEmailSend($request, $invoice, 'Invoice updated and emailed to');
+            return $this->handleEmailSend($request, $invoice, 'Invoice updated; email queued for');
         }
 
         return redirect()->route('invoices.index')->with('success', 'Invoice updated.');
@@ -204,11 +202,7 @@ class InvoiceController extends Controller
 
         try {
             $this->dispatchMail($invoice, $data, $settings);
-            if ($invoice->status === 'draft') {
-                $invoice->update(['status' => 'sent']);
-                DashboardCache::forget();
-            }
-            return back()->with('success', "Invoice emailed to {$data['to_email']} successfully.");
+            return back()->with('success', "Invoice email queued for {$data['to_email']}. Check delivery status in Share / Email.");
         } catch (\Exception $e) {
             return back()->with('error', 'Email failed: ' . $e->getMessage());
         }
@@ -216,12 +210,8 @@ class InvoiceController extends Controller
 
     public function pdf(Invoice $invoice)
     {
-        $invoice->load('items', 'payments');
-        $settings    = \App\Models\Setting::all_settings();
-        $logoBase64  = \App\Http\Controllers\SettingsController::logoBase64($settings);
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('invoices.pdf', compact('invoice', 'settings', 'logoBase64'))
-            ->setPaper('a4', 'portrait');
-        return $pdf->download("Invoice-{$invoice->number}.pdf");
+        $safeNumber = preg_replace('/[^A-Za-z0-9_.-]/', '_', $invoice->number);
+        return app(\App\Services\InvoicePdf::class)->make($invoice)->download("Invoice-{$safeNumber}.pdf");
     }
 
     // ─── Email Helpers ────────────────────────────────────────
@@ -260,41 +250,7 @@ class InvoiceController extends Controller
 
     private function dispatchMail(Invoice $invoice, array $data, array $settings): void
     {
-        $host      = trim($settings['smtp_host'] ?? '');
-        $port      = (int) ($settings['smtp_port'] ?? 587);
-        $username  = $settings['smtp_username'] ?? '';
-        $password  = $settings['smtp_password'] ?? '';
-        $encryption = $settings['smtp_encryption'] ?? 'tls';
-        $fromEmail = trim($settings['smtp_from_email'] ?? ($settings['company_email'] ?? ''));
-        $fromName  = $settings['smtp_from_name'] ?? ($settings['company_name'] ?? 'InvoiceIQ');
-
-        if (!$host) {
-            throw new \RuntimeException('SMTP host is not configured. Go to Settings → Email and fill in the SMTP details.');
-        }
-        if (!$fromEmail) {
-            throw new \RuntimeException('From email address is not configured. Go to Settings → Email and set the From Email.');
-        }
-
-        // Build transport directly — bypasses any cached laravel mailer instance
-        $useSsl    = $encryption === 'ssl';
-        $transport = new EsmtpTransport($host, $port, $useSsl);
-        if ($username !== '') $transport->setUsername($username);
-        if ($password !== '') $transport->setPassword($password);
-
-        $mailer = new \Illuminate\Mail\Mailer(
-            'smtp',
-            app('view'),
-            $transport,
-            app('events')
-        );
-        $mailer->alwaysFrom($fromEmail, $fromName);
-
-        $mailable = new InvoiceMail($invoice, $data['email_subject'], $data['email_body']);
-        $send = $mailer->to($data['to_email']);
-        if (!empty($data['cc_email'])) {
-            $send = $send->cc($data['cc_email']);
-        }
-        $send->send($mailable);
+        app(\App\Services\WorkspaceWorkflow::class)->queueEmail($invoice, $data, (int) auth()->id());
     }
 
     // ─── Helpers ─────────────────────────────────────────────

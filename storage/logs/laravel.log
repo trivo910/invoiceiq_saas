@@ -1412,3 +1412,5 @@ Stack trace:
 [2026-10-28 12:30:27] testing.WARNING: Razorpay webhook contained conflicting subscription IDs. {"event_id":"evt_subscription_entity_mismatch","tenant_id":5784,"subscription_id":6169} 
 [2026-10-28 17:09:05] testing.WARNING: Razorpay webhook reused a payment ID bound to another billing record. {"event_id":"evt_conflicting_payment_binding","provider_payment_id":"pay_shared_conflict","tenant_id":5888,"subscription_id":6282} 
 [2026-10-28 17:09:06] testing.WARNING: Razorpay webhook contained conflicting subscription IDs. {"event_id":"evt_subscription_entity_mismatch","tenant_id":5889,"subscription_id":6283} 
+[2026-10-28 17:54:15] testing.WARNING: Razorpay webhook reused a payment ID bound to another billing record. {"event_id":"evt_conflicting_payment_binding","provider_payment_id":"pay_shared_conflict","tenant_id":6020,"subscription_id":6423} 
+[2026-10-28 17:54:16] testing.WARNING: Razorpay webhook contained conflicting subscription IDs. {"event_id":"evt_subscription_entity_mismatch","tenant_id":6021,"subscription_id":6424} 

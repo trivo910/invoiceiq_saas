@@ -31,3 +31,12 @@ Phase 4 billing history, subscription invoice snapshots, and subscription state 
 Platform identities use their own table/provider/session guard. `SuperAdminService` explicitly authorizes the active platform identity; `withinTenant` sets one tenant context for scoped model/relationship work and restores the previous context in finally. No global scope is removed. Authorized platform subscription metrics and plan-reference checks are the explicit cross-tenant Query Builder exception; `RequireSuperAdmin` audits platform request access, and mutation services transactionally audit changes. Platform tables (admins/audit/coupons/announcements) are not tenant business records.
 
 Support impersonation selects a verified owner of one active/onboarded workspace, pins tenant selection, expires in 15 minutes and is read-only. Normal tenant scopes/binding remain in force. End/expiry/revocation restores the original identity/workspace. Tenant suspension denies workspace routes and subscription writes, including invitation paths using BillingService. Signed provider webhook processing continues independently of suspension.
+
+
+## Phase 6 files, capabilities and queued work
+
+TenantWork establishes explicit context from a trusted scalar tenant ID and restores the previous context in finally. SendInvoice and BuildAccountExport carry only tenant/record IDs and query scoped records after context is set; current membership is rechecked. Failure callbacks update only their explicit tenant/record pair. No tenant-owned model is serialized into these jobs.
+
+Public invoice links use an exact random-token hash/expiry/revocation lookup in the capability table to resolve a tenant, then all invoice/settings/logo access is scoped. This is the documented public capability exception, independent of the provider webhook and guarded platform aggregate exceptions. Bearer links never authorize writes.
+
+CSV streaming establishes context inside the streamed callback. ZIPs and mail temporary files use tenant-private directories; export downloads/cleanup validate a tenant-specific UUID ZIP path. Owner export manifests use allowlists that omit credentials/tokens/provider metadata. Authorized maintenance pruning loops tenant roots and applies explicit tenant_id predicates to each export row.

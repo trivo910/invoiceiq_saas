@@ -2,6 +2,10 @@
 
 Each prompt is self-contained enough to resume without chat history. Read the docs first. Do one phase only, then stop and summarize for review.
 
+## Current continuation state
+
+Phases 1-3, 5 and 6 implementation are ready. Phase 4 foundation remains implemented with provider-backed QA and production commercial decisions pending the Razorpay support reply. Latest full MySQL suite: 90 tests, 708 assertions (2026-10-28). See PROGRESS.md, WORKFLOWS.md and TESTING.md before choosing more work. Phase 5 account provisioning and Phase 5/6 manual browser/mail/cron reviews remain operator steps. Phase 7 is not started. The prompts below are reusable historical phase templates; do not reimplement completed phases.
+
 ## Phase 1 — Tenancy foundation
 
 You are continuing InvoiceIQ's SaaS conversion. Read `/docs/ai/README.md`, `PROGRESS.md`, `TENANCY_RULES.md`, `CODING_STANDARDS.md`, `DATABASE_SCHEMA.md`, `GST_RULES.md`, and `ROADMAP.md`. The user has approved Phase 0 and authorized Phase 1 only. Inspect actual legacy schema/data read-only first, especially duplicate codes/numbers and migration drift. Decide/document user membership shape before coding. Add the tenants table, tenant ownership fields/FKs/indexes for every business table, create/backfill the default tenant without losing existing records, replace global unique constraints with tenant-scoped constraints where appropriate, add `BelongsToTenant` scope/assignment, and implement tenant + financial-year invoice numbering with safe transaction/row lock while preserving existing invoice numbers. Preserve GST logic and UI. Before coding, list files and risks. Update `.env.example`, setup script and README if relevant, docs including schema/progress/roadmap/changelog/decisions, then stop and report files, migrations, tests/commands, and manual QA. Do not begin Phase 2.

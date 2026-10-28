@@ -1,6 +1,6 @@
 # SaaS conversion roadmap
 
-Status: **Phases 1–3 complete; Phase 4 foundation implemented, awaiting product decisions and sandbox QA**.
+Status: **Phases 1-3, 5 and 6 implementation ready; Phase 4 provider/commercial work pending. Operator/manual reviews remain open.**
 
 ## Phase 0 — Documentation setup
 
@@ -103,10 +103,10 @@ Status: **Phases 1–3 complete; Phase 4 foundation implemented, awaiting produc
 - [x] Separate guard/identity, dashboard, tenant/plan controls, announcements/coupon catalog (checkout redemption awaits Phase 4 rules).
 - [x] Audited 15-minute read-only owner impersonation, expiry/revocation, identity restore, persistent exit banner and sensitive-action logging.
 
-## Phase 6 — Branding and SaaS workflows (not started)
+## Phase 6 - Branding and SaaS workflows (implemented)
 
-- [ ] Tenant settings/branding and selectable PDF templates.
-- [ ] Public token invoice links, transactional mail, CSV/account exports.
+- [x] Tenant settings/profile synchronization, private uploads and selectable classic/accent PDFs with plan entitlement.
+- [x] Expiring/revocable public invoice PDF capabilities, tenant-aware queued email/history, scoped CSV and private owner account exports.
 
 ## Phase 7 — Launch hardening (not started)
 
@@ -164,3 +164,10 @@ Status: **Phases 1–3 complete; Phase 4 foundation implemented, awaiting produc
 - [x] Local/test migrations, full MySQL suite (77 tests, 632 assertions), PHP syntax, routes and Blade compilation.
 - [ ] Operator provisioning (`php artisan superadmin:create`) and manual desktop/mobile platform review.
 - [ ] Phase 4 provider support resolution and approved production billing/discount decisions remain separate dependencies.
+
+### Phase 6 validation - 2026-10-28
+
+- [x] Local/test additive migration and full suite: 90 tests, 708 assertions.
+- [x] PHP syntax, Blade compilation, protected workflow routes and short worker/prune schedule registration.
+- [ ] Manual desktop/mobile PDF/sharing/export review and real SMTP/hosting cron execution.
+- [ ] Phase 4 provider/commercial work remains open; Phase 7 is not started.

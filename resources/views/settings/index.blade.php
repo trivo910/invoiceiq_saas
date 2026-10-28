@@ -53,6 +53,17 @@
     </div>
 
     {{-- Main settings form --}}
+    <section class="card" style="margin-bottom:16px">
+        <div class="card-header"><div class="card-title">Invoice branding</div></div>
+        <form method="post" action="{{ route('settings.branding') }}" class="card-body">@csrf
+            <p>Advanced template and accent settings follow your plan's custom branding entitlement. Your existing company profile and private logo remain available.</p>
+            <label class="form-label" for="invoicePdfTemplate">PDF template</label>
+            <select id="invoicePdfTemplate" name="invoice_pdf_template" class="form-control"><option value="classic" @selected(($settings['invoice_pdf_template'] ?? 'classic') === 'classic')>Classic</option><option value="accent" @selected(($settings['invoice_pdf_template'] ?? '') === 'accent')>Accent</option></select>
+            <label class="form-label" for="brandColor">Accent color</label><input type="color" id="brandColor" name="brand_color" value="{{ preg_match('/^#[0-9A-Fa-f]{6}$/D', $settings['brand_color'] ?? '') ? $settings['brand_color'] : '#245dc9' }}">
+            <button class="btn btn-primary btn-sm" type="submit">Save branding</button>
+        </form>
+    </section>
+
     <form id="mainSettingsForm" method="POST" action="{{ route('settings.update') }}">@csrf
         <div class="card" style="margin-bottom:16px;"><div class="card-header"><div class="card-title">Company Details</div></div><div class="card-body"><div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;">
             @foreach([['company_name','Company Name','text'],['company_gstin','GSTIN','text'],['company_pan','PAN','text'],['company_address','Address','text'],['company_city','City','text'],['company_state','State','text'],['company_state_code','State Code','text'],['company_phone','Phone','tel'],['company_email','Email','email']] as [$k,$l,$t])

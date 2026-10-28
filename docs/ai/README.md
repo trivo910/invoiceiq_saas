@@ -23,3 +23,7 @@ Before any phase, read this index, `PROGRESS.md`, `TENANCY_RULES.md`, and `CODIN
 ## Phase 0 scope
 
 Phase 0 changes documentation only. No application code, database, configuration, setup, or runtime behavior is changed. Existing feature and GST documents are based on the checked-in migrations, models, controllers, Blade views, helpers, routes, and seeder. This scan is static; database contents and production deployment configuration have not been inspected.
+
+## Current handoff
+
+Phase 6 workflow implementation is ready; see PROGRESS.md and WORKFLOWS.md for current behavior and operator steps. Phase 4 provider-backed QA/commercial decisions remain pending. Historical phase prompts are templates, not statements that earlier phases are still unimplemented.

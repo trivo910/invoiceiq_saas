@@ -152,3 +152,19 @@ php artisan view:cache
 ```
 
 PHP syntax validation passed for application/routes/config/migrations/tests. Fourteen platform routes register and all Blade templates compile. Initial focused run exposed an in-memory active-default mismatch for newly created admins; fixed the model default and reran successfully before the full suite. No default platform account was created. Operator provisioning and manual browser/accessibility/responsive review remain to be performed; screenshots/browser interaction were not available in this session.
+
+
+## Phase 6 validation - 2026-10-28
+
+Full isolated MySQL suite: **90 tests, 708 assertions** using `php vendor/bin/phpunit`. This includes 13 WorkspaceWorkflowTest scenarios and prior tenant, billing and super-admin tests. The initial focused 11-scenario workflow run passed 70 assertions; two additional worker-ID/owner-revocation tests are included in the full result.
+
+Coverage: public PDF link hash storage, expiry/revocation, draft/cancelled/suspended denial, cross-tenant bearer access without context leakage, no public write route; writer/export roles and expired-subscription read/write boundaries; encrypted queued message payloads/scalar jobs, successful-send dedupe, sanitized retry failures, status transitions, tenant-scoped failed callbacks, sender membership revocation and wrong-tenant IDs; streaming context/formula-neutralized CSV isolation; owner-only private ZIP generation/download, secret exclusion, expiry/pruning/role revocation; validated plan-gated branding and actual PDF/ZIP attachment rendering.
+
+```powershell
+php vendor/bin/phpunit tests/Feature/WorkspaceWorkflowTest.php
+php vendor/bin/phpunit
+php artisan view:cache
+php artisan schedule:list
+```
+
+No actual SMTP/email recipient or provider API/payment was used by these tests. PHP syntax and Blade compilation passed. Production cron/SMTP, manual browser/mobile review and large-export/crash behavior are not claimed verified. Initial test failures were addressed by using the available Artisan call API without adding Mockery and loading persisted invoice defaults in the scoped PDF service.
