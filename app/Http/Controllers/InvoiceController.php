@@ -133,9 +133,14 @@ class InvoiceController extends Controller
 
         DB::transaction(function () use ($request, $invoice) {
             $invoice->update($this->invoiceData($request));
+            $removedItemCount = $invoice->items()->count();
             $invoice->items()->delete();
             $this->syncItems($invoice, $request->rows ?? []);
             $this->recalculate($invoice);
+            app(\App\Services\TenantAudit::class)->record('invoice.lines_replaced', 'Invoice', $invoice->id, [
+                'removed_count' => $removedItemCount,
+                'replacement_count' => count($request->rows ?? []),
+            ]);
         });
 
         DashboardCache::forget();

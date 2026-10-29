@@ -48,7 +48,16 @@ class SendInvoice implements ShouldQueue
 
     public function failed(?\Throwable $error): void
     {
-        // The trusted job IDs identify a single tenant row even when that tenant was suspended.
+        try {
+            app(TenantWork::class)->run($this->tenantId, function () {
+                $delivery = InvoiceDelivery::find($this->deliveryId);
+                if ($delivery && $delivery->status !== 'sent') $delivery->update(['status' => 'failed']);
+            });
+            return;
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException|\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            // Suspended or soft-deleted workspaces cannot establish normal tenant context.
+        }
+        // Trusted job IDs still constrain the fallback to this tenant and delivery row.
         DB::table('invoice_deliveries')->where('tenant_id', $this->tenantId)->where('id', $this->deliveryId)
             ->where('status', '!=', 'sent')->update(['status' => 'failed', 'updated_at' => now()]);
     }

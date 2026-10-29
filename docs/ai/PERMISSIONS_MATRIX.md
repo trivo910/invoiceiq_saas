@@ -39,3 +39,10 @@ Owner impersonation is explicitly read-only: allowed core lists/search, invoice 
 - Owner/admin: advanced brand/template updates require write access and custom_branding entitlement. Existing company/logo permissions remain.
 - Public bearer: view one finalized invoice PDF through a valid, unexpired, unrevoked token for an active tenant. No mutation, billing, membership or export access.
 - Platform read-only impersonation retains its existing route allowlist: new share/mail/export/settings actions are not implicitly granted.
+
+## Phase 7 activity and recovery
+
+- Owner/admin: view workspace audit events and usage/workflow counts. Audit entries omit changed values and are append-only through application model guards.
+- Owner: request workspace soft deletion after confirming password and exact workspace name. Active provider-managed subscriptions with remaining lifecycle/access block deletion.
+- Platform admin: list soft-deleted workspaces and restore one with a reason. This uses the separate platform guard/audit trail; tenant role does not grant recovery.
+- Soft deletion retains data indefinitely. There is no self-service restore or automatic permanent purge until retention policy is approved.

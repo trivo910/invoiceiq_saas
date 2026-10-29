@@ -26,4 +26,4 @@ Phase 0 changes documentation only. No application code, database, configuration
 
 ## Current handoff
 
-Phase 6 workflow implementation is ready; see PROGRESS.md and WORKFLOWS.md for current behavior and operator steps. Phase 4 provider-backed QA/commercial decisions remain pending. Historical phase prompts are templates, not statements that earlier phases are still unimplemented.
+Phase 7 launch-hardening work is in progress; see PROGRESS.md, LAUNCH_CHECKLIST.md, LEGAL_DRAFT_NOTES.md and DEPLOYMENT.md for implemented behavior and open release gates. Public legal pages contain fictional reference drafts, remain unapproved, and use reserved non-deliverable contact details. Local development is current and the future VPS is unverified. Phase 4 provider-backed QA/commercial decisions remain pending. Historical phase prompts are templates, not statements that earlier phases are still unimplemented.

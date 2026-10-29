@@ -2,11 +2,11 @@
 
 ## Current position
 
-- **Phase:** 6 - Branding and SaaS workflows (implemented; Phase 4 provider/commercial work remains open)
-- **Status:** Continued into Phase 6 after Phase 5. Added advanced invoice branding, expiring/revocable view-only PDF links, encrypted email-delivery history and tenant-aware database jobs, CSV downloads and private owner workspace exports. Razorpay support/production billing decisions remain pending. No Phase 7 work started.
-- **Code changes:** Phase 6 workflow models/migration, tenant-context helper, shared PDF renderer, queued mail/export jobs and services, protected public/tenant routes, workflow pages/branding controls, pruning/scheduler and security regressions. Existing GST math/inline invoice calculations are unchanged.
-- **Migration state:** Phase 6 workflow tables applied to local MySQL and invoiceiq_test on 2026-10-28. Prior Phase 4/5 migrations are applied.
-- **Automated tests:** Full MySQL suite passes: 90 tests, 708 assertions (2026-10-28). Initial focused workflow suite passed 11 tests, 70 assertions; two additional worker-boundary tests are included in the final full suite. PHP syntax/Blade/route checks passed. Real SMTP, browser review and deployed cron remain manual verification; no actual external email or provider payment was sent.
+- **Phase:** 7 - Launch hardening (implementation in progress; provider/commercial and production operations remain open)
+- **Status:** Implemented public landing/pricing pages, fictional/referenceable legal sample drafts, tenant activity auditing, owner workspace soft deletion and platform recovery, baseline security headers, SMTP-password-at-rest encryption, tax identifier format normalization and release configuration checks. User approved creating fictional placeholder legal data; approval remains false and sample pages are not launch-ready.
+- **Code changes:** Phase 7 additive migration, tenant audit hooks, workspace lifecycle and pages, public routes/views, release check/encryption commands, setup safety, VPS nginx sample and documentation. Existing GST math is unchanged.
+- **Migration state:** Phase 7 migration applied to local MySQL and invoiceiq_test on 2026-10-28.
+- **Automated tests:** Focused Phase 7 tests pass: 7 tests, 41 assertions. Full MySQL suite passes: **97 tests, 750 assertions** (2026-10-29). Real SMTP/provider/VPS/backup restore/legal review remain unverified.
 
 ## Completed
 
@@ -97,7 +97,7 @@
 
 ## In progress / next
 
-1. Provision a platform administrator with `php artisan superadmin:create` and manually review the platform screens; Phase 6 workflow/operator review is also pending; Phase 7 remains a separate next scope.
+1. Provision a platform administrator with `php artisan superadmin:create` and manually review the platform screens; Phase 6 workflow and Phase 7 activity/recovery UI review are also pending.
 2. Replace local demo assumptions with approved prices/limits, seller tax invoice details, grace duration, downgrade behavior, proration, and refund decisions; then verify Razorpay sandbox events and production tax invoices.
 3. Before deploying to another installation, back up its database, preflight actual legacy data/migration drift, then rehearse migrations on staging.
 
@@ -113,7 +113,48 @@
 
 ## Resume point
 
-Read `README.md`, this file, `TENANCY_RULES.md`, `CODING_STANDARDS.md`, `DATABASE_SCHEMA.md`, `ROADMAP.md`, and `WORKFLOWS.md`. Phases 1-3, 5 and 6 implementation are ready. Complete operator provisioning/manual reviews and Phase 4 provider/commercial work when inputs arrive. Phase 7 is not started. Upgrade other installations only after backup, preflight and staging rehearsal.
+Read `README.md`, this file, `TENANCY_RULES.md`, `CODING_STANDARDS.md`, `DATABASE_SCHEMA.md`, `ROADMAP.md`, `LAUNCH_CHECKLIST.md`, `DEPLOYMENT.md`, and `WORKFLOWS.md`. Phase 7 implementation is in progress; legal approval, Phase 4 provider QA, manual browser review, production SMTP, VPS, backup and restore remain open. Upgrade other installations only after backup, preflight and staging rehearsal.
+
+### Phase 7 continuation - 2026-10-28
+
+- Implemented public home/pricing/terms/privacy pages. Pricing is approval-gated and local sample values are labeled; legal pages are clearly draft placeholders because the operator has not finalized legal content.
+- Added tenant activity audit schema and model hooks. Events retain action/target/changed field names only; invitations and membership mutations have explicit events. Added activity/usage view for workspace owner/admin.
+- Added password plus exact-name owner soft delete and platform-only deleted-workspace recovery. Data is retained; provider-managed subscriptions block deletion while lifecycle/access remains. Late signed webhooks for deleted roots are acknowledged without applying changes.
+- Added baseline security headers, more writer/search/email rate limits, and GSTIN/PAN/state format normalization. GST calculations are unchanged. Added at-rest encryption for SMTP password settings and an explicit legacy encryption command.
+- Reworked setup helper to preserve APP_KEY, avoid credentials on command lines, and avoid implicit demo seeding/admin creation. Added `release:check`, VPS/nginx sample, release checklist and deployment/backup/rollback guidance.
+- Applied Phase 7 migration to local MySQL and invoiceiq_test after `--pretend`. Focused Phase 7 suite: 7 tests, 41 assertions. Full MySQL suite after Phase 7 changes passed **97 tests, 749 assertions** (2026-10-29).
+- User confirmed local development now and VPS deployment later; legal pages are not ready. VPS, SMTP, Razorpay account-backed QA, backup/restore, rollback, browser review and approvals remain launch gates. No provider payment/email or VPS operation performed.
+
+### Phase 7 follow-up - 2026-10-29
+
+- Closed an audit blind spot in invoice edits: relationship bulk deletion of old invoice lines bypassed model events. Invoice updates now append an `invoice.lines_replaced` event in the same transaction, containing removed/replacement counts only. No invoice contents, field values, or customer data are copied into audit details. Broader browser/staging audit review and retention policy remain open.
+- Closed workspace settings audit gaps: profile query-builder updates now log field names, while logo replacement/removal records the operation only. No profile values or private file paths are stored in the event details.
+- Invitation reissues now use a distinct `invitation.resent` audit action rather than appearing as newly created invitations; email addresses and token data remain excluded.
+- Workspace activity now shows human-readable labels and safe event summaries, including invoice line counts and logo operations, instead of hiding non-field details.
+- Production `release:check` now detects plaintext legacy SMTP passwords and encrypted values that the configured APP_KEY cannot decrypt, without printing credential contents.
+- Terminal invoice-email and account-export job failures now use tenant-scoped model updates (and audit hooks) when the workspace is active; suspended/deleted workspaces retain the explicit tenant-ID fallback.
+
+- Extended rate limits to settings/logo/branding/share revocation/member mutations. Membership change and audit events now share a DB transaction.
+- Security headers are applied to normal and exception responses; regression coverage checks headers on a 404.
+- Expanded production `release:check` to check paid billing values without exposing them, approvals, HTTPS/session, DB queue, SMTP config, PHP version/extensions, active platform admin, pending migrations and writable private storage.
+- Latest full suite: **97 tests, 750 assertions**; focused Phase 7: **7 tests, 41 assertions**. Production release check correctly reports remaining configuration gates in this local setup. It cannot verify external service behavior or hosting.
+
+### Legal sample continuation - 2026-10-29
+
+- Expanded Terms and Privacy pages into clearly fictional sample drafts with `InvoiceIQ Sample Operator` and reserved non-deliverable `legal@example.invalid` details. The pages remain marked sample/not approved regardless of local environment values.
+- Added direct primary-source references for the DPDP Act, phased commencement notification, DPDP Rules, IT Act, and 2011 SPDI Rules. Added `LEGAL_DRAFT_NOTES.md` with code-grounded data categories, unknowns, replacement checklist, and a caution that cited provisions have phased commencement and applicability must be checked by counsel.
+- Kept `LAUNCH_LEGAL_APPROVED=false`; no approval state, legal entity, contact email, or production setting was changed. No automated tests were run for this content-only documentation/view update.
+
+### Razorpay Test Mode recheck - 2026-10-29
+
+- Updated Subscriptions dashboard screenshot shows Test Mode and an enabled first-plan creation flow. Read-only `GET /v1/plans?count=100` now returns HTTP 200 with zero plans; test credentials matched local `.env` and were not printed. This is a changed provider/account state compared with the prior 401.
+- No provider plan/payment/subscription was created. Next manual step is to create QA-labeled plans using the approved demo catalog, then provide the plan IDs so they can be attached to local plan records and checkout QA can proceed. See GATEWAY_QA.md.
+
+### Razorpay QA sample plans - 2026-10-29
+
+- At the user's request, created Test Mode QA-only Starter monthly/yearly plans at the approved sample amounts (₹499 / ₹4,990) and saved their returned IDs to the matching local Starter plan fields. An idempotent follow-up list check matched both plans' period, interval, currency, amounts and local IDs.
+- IDs: monthly `plan_TtgrwbxWmjwMXJ`; yearly `plan_TtgrxK0onQQQgF`. No subscription or payment created; no real money or production plan used. IDs and evidence are recorded in GATEWAY_QA.md.
+- Next: perform application checkout in a QA workspace, then verify actual Razorpay webhook/checkout outcomes. Do not interpret plan creation as checkout/webhook completion.
 
 ### Latest continuation — 2026-10-27
 

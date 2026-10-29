@@ -53,6 +53,15 @@ class BuildAccountExport implements ShouldQueue
 
     public function failed(?\Throwable $error): void
     {
+        try {
+            app(TenantWork::class)->run($this->tenantId, function () {
+                $export = AccountExport::find($this->exportId);
+                if ($export && $export->status !== 'ready') $export->update(['status' => 'failed']);
+            });
+            return;
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException|\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            // Suspended or soft-deleted workspaces cannot establish normal tenant context.
+        }
         DB::table('account_exports')->where('tenant_id', $this->tenantId)->where('id', $this->exportId)
             ->where('status', '!=', 'ready')->update(['status' => 'failed', 'updated_at' => now()]);
     }

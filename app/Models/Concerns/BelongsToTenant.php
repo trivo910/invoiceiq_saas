@@ -11,6 +11,9 @@ trait BelongsToTenant
 {
     public static function bootBelongsToTenant(): void
     {
+        foreach (['created', 'updated', 'deleted'] as $event) {
+            static::$event(fn ($model) => app(\App\Services\TenantAudit::class)->changed($model, $event));
+        }
         static::addGlobalScope('tenant', function (Builder $builder): void {
             $tenantId = App::make(TenantContext::class)->id();
 

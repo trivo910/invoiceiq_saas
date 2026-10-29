@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\SuperAdmin\{CatalogRequest, TenantActionRequest};
 use App\Models\{AdminAuditLog, Plan, Tenant};
-use App\Services\{ImpersonationService, SuperAdminService};
+use App\Services\{ImpersonationService, SuperAdminService, WorkspaceLifecycle};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -45,9 +45,10 @@ class SuperAdminController extends Controller
 
     public function tenants(Request $request)
     {
-        $data = $request->validate(['q' => ['nullable', 'string', 'max:100'], 'status' => ['nullable', 'in:active,suspended']]);
+        $data = $request->validate(['q' => ['nullable', 'string', 'max:100'], 'status' => ['nullable', 'in:active,suspended,deleted']]);
         $tenants = Tenant::query()->when($data['q'] ?? null, fn ($q, $value) => $q->where(fn ($q) => $q->where('name', 'like', '%'.$value.'%')->orWhere('slug', 'like', '%'.$value.'%')))
-            ->when($data['status'] ?? null, fn ($q, $value) => $q->where('status', $value))->latest('id')->paginate(25)->withQueryString();
+            ->when(($data['status'] ?? null) === 'deleted', fn ($q) => $q->onlyTrashed())
+            ->when(isset($data['status']) && $data['status'] !== 'deleted', fn ($q) => $q->where('status', $data['status']))->latest('id')->paginate(25)->withQueryString();
         return view('superadmin.tenants', compact('tenants'));
     }
 
@@ -60,6 +61,20 @@ class SuperAdminController extends Controller
     {
         $service->updateTenant($tenant, $request->validated());
         return back()->with('success', 'Workspace updated and action audited.');
+    }
+
+    public function deleteTenant(Request $request, Tenant $tenant, WorkspaceLifecycle $lifecycle)
+    {
+        $data = $request->validate(['reason' => ['required', 'string', 'min:5', 'max:1000']]);
+        $lifecycle->trash($tenant, $data['reason'], true);
+        return back()->with('success', 'Workspace moved to recovery list and audited.');
+    }
+
+    public function restoreTenant(Request $request, int $tenant, WorkspaceLifecycle $lifecycle)
+    {
+        $data = $request->validate(['reason' => ['required', 'string', 'min:5', 'max:1000']]);
+        $lifecycle->restore($tenant, $data['reason']);
+        return redirect()->route('superadmin.tenants', ['status' => 'deleted'])->with('success', 'Workspace restored and audited.');
     }
 
     public function impersonate(Request $request, Tenant $tenant, ImpersonationService $service)

@@ -20,11 +20,12 @@ class OnboardingController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        \App\Support\TaxIdentifiers::normalize($request, ['gstin', 'pan', 'state_code']);
         $data = $request->validate([
             'company_name' => ['required', 'string', 'max:255'],
-            'gstin' => ['nullable', 'string', 'max:20'],
-            'pan' => ['nullable', 'string', 'max:12'],
-            'state_code' => ['nullable', 'string', 'max:5'],
+            'gstin' => ['nullable', 'string', \App\Support\TaxIdentifiers::GSTIN],
+            'pan' => ['nullable', 'string', \App\Support\TaxIdentifiers::PAN],
+            'state_code' => ['nullable', 'string', \App\Support\TaxIdentifiers::STATE],
             'address' => ['nullable', 'string', 'max:2000'],
             'invoice_prefix' => ['required', 'alpha_num', 'max:10'],
             'logo' => ['nullable', 'image', 'mimes:jpeg,png,gif', 'max:2048'],

@@ -4,7 +4,7 @@ Each prompt is self-contained enough to resume without chat history. Read the do
 
 ## Current continuation state
 
-Phases 1-3, 5 and 6 implementation are ready. Phase 4 foundation remains implemented with provider-backed QA and production commercial decisions pending the Razorpay support reply. Latest full MySQL suite: 90 tests, 708 assertions (2026-10-28). See PROGRESS.md, WORKFLOWS.md and TESTING.md before choosing more work. Phase 5 account provisioning and Phase 5/6 manual browser/mail/cron reviews remain operator steps. Phase 7 is not started. The prompts below are reusable historical phase templates; do not reimplement completed phases.
+Phases 1-3, 5 and 6 implementation are ready; Phase 7 launch hardening is in progress. Phase 4 provider-backed QA and commercial decisions remain pending the Razorpay support reply. Latest full MySQL suite: 97 tests, 750 assertions (2026-10-29). Read PROGRESS.md, LAUNCH_CHECKLIST.md, LEGAL_DRAFT_NOTES.md, DEPLOYMENT.md and TESTING.md. User's current target is local development, with VPS/nginx deployment later; public legal pages contain fictional reference drafts that remain unapproved. VPS, real SMTP/provider QA, backup restoration and production approvals remain unverified. The prompts below are reusable historical templates; do not reimplement completed phases.
 
 ## Phase 1 — Tenancy foundation
 

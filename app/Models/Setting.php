@@ -14,8 +14,19 @@ class Setting extends Model
 
     protected $fillable = ['key', 'value'];
 
+    protected function value(): \Illuminate\Database\Eloquent\Casts\Attribute
+    {
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(
+            get: fn ($value) => $this->key === 'smtp_password' && is_string($value) && str_starts_with($value, 'enc:v1:')
+                ? \Illuminate\Support\Facades\Crypt::decryptString(substr($value, 7)) : $value,
+            set: fn ($value) => $this->key === 'smtp_password' && $value !== null && $value !== ''
+                ? 'enc:v1:'.\Illuminate\Support\Facades\Crypt::encryptString((string) $value) : $value,
+        );
+    }
+
     public static function get(string $key, mixed $default = null): mixed
     {
+        if ($key === 'smtp_password') return static::where('key', $key)->first()?->value ?? $default;
         if ($key === 'invoice_seq' && app(TenantContext::class)->id()) {
             return app(InvoiceNumberingService::class)->nextNumberForCurrentYear();
         }

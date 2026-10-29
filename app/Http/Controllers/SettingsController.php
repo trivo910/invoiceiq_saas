@@ -19,14 +19,15 @@ class SettingsController extends Controller
 
     public function update(Request $request)
     {
+        \App\Support\TaxIdentifiers::normalize($request, ['company_gstin', 'company_pan', 'company_state_code']);
         $data = $request->validate([
             'company_name'    => 'required|string|max:255',
-            'company_gstin'   => 'nullable|string|max:20',
-            'company_pan'     => 'nullable|string|max:12',
+            'company_gstin'   => ['nullable', 'string', \App\Support\TaxIdentifiers::GSTIN],
+            'company_pan'     => ['nullable', 'string', \App\Support\TaxIdentifiers::PAN],
             'company_address' => 'nullable|string',
             'company_city'    => 'nullable|string|max:100',
             'company_state'   => 'nullable|string|max:100',
-            'company_state_code' => 'nullable|string|max:5',
+            'company_state_code' => ['nullable', 'string', \App\Support\TaxIdentifiers::STATE],
             'company_phone'   => 'nullable|string|max:20',
             'company_email'   => 'nullable|email',
             'bank_name'       => 'nullable|string|max:100',
@@ -63,6 +64,11 @@ class SettingsController extends Controller
                 if (array_key_exists($setting, $data)) $profile[$field] = $data[$setting];
             }
             \App\Models\Tenant::whereKey(app(TenantContext::class)->id())->update($profile);
+            if ($profile !== []) {
+                app(\App\Services\TenantAudit::class)->record('workspace.profile_updated', 'Tenant', app(TenantContext::class)->id(), [
+                    'fields' => array_values(array_keys($profile)),
+                ]);
+            }
         });
 
         return redirect()->route('settings.index')->with('success', 'Settings saved successfully.');
@@ -80,6 +86,7 @@ class SettingsController extends Controller
         Setting::set('company_logo', $path);
         \App\Models\Tenant::whereKey($tenantId)->update(['logo_path' => $path]);
         $storage->delete($existing, $tenantId);
+        app(\App\Services\TenantAudit::class)->record('workspace.logo_updated', 'Tenant', $tenantId, ['operation' => 'uploaded']);
 
         return redirect()->route('settings.index')->with('success', 'Logo uploaded successfully.');
     }
@@ -92,6 +99,7 @@ class SettingsController extends Controller
         app(TenantLogoStorage::class)->delete($path, $tenantId);
         Setting::set('company_logo', '');
         \App\Models\Tenant::whereKey($tenantId)->update(['logo_path' => null]);
+        app(\App\Services\TenantAudit::class)->record('workspace.logo_updated', 'Tenant', $tenantId, ['operation' => 'removed']);
         return redirect()->route('settings.index')->with('success', 'Logo removed.');
     }
 
@@ -149,7 +157,7 @@ class SettingsController extends Controller
 
             return response()->json(['ok' => true, 'message' => "Test email sent to {$fromEmail} successfully."]);
         } catch (\Exception $e) {
-            return response()->json(['ok' => false, 'message' => $e->getMessage()]);
+            return response()->json(['ok' => false, 'message' => 'Test delivery failed. Check protected SMTP configuration.']);
         }
     }
 

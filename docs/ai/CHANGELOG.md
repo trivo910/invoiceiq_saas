@@ -1,5 +1,33 @@
 # Changelog
 
+## Phase 7 - 2026-10-28 - Launch hardening foundation
+
+Added public landing/pricing/draft legal pages, tenant-scoped activity auditing, owner workspace soft deletion, platform recovery, security headers, route throttles, tax identifier format normalization, SMTP password encryption, setup/release commands and a VPS/nginx reference. Added launch and backup/rollback documentation. Workspace records remain retained; legal/pricing approvals, Razorpay account QA, SMTP, browser review and VPS/backup restore are still open.
+
+Added migration `2026_10_28_000003_add_launch_audit_and_workspace_recovery.php`, reviewed with `--pretend` and applied to local MySQL and invoiceiq_test. Phase 7 focused tests passed 7 tests/41 assertions; full MySQL suite passed 97 tests/749 assertions (final run 2026-10-29). No external payment/email, provider setting, or VPS deployment was performed.
+
+Follow-up (2026-10-29): extended mutation throttles, made membership audits transactional, applied security headers to exception responses, and expanded production release configuration checks. Provider, mail, legal, backup/restore and VPS gates remain open.
+
+Legal sample follow-up (2026-10-29): expanded public Terms and Privacy into clearly fictional, source-linked drafts using a reserved non-deliverable email. Added `LEGAL_DRAFT_NOTES.md` with implementation facts, legal unknowns and replacement checklist. Approval remains disabled; no live operator identity was invented or set in configuration. No test suite was run for the content-only update.
+
+Razorpay QA follow-up (2026-10-29): after the user shared a Test Mode dashboard screenshot showing the first pricing-plan flow, a read-only Plans API request returned HTTP 200 with zero plans. This supersedes the prior repeated Plans/Subscriptions 401 state for this endpoint. No provider objects were created; further QA needs plan IDs.
+
+At the user's request, created two Test Mode-only QA Starter plans (₹499 monthly, ₹4,990 yearly), validated them on a tagged repeat lookup, and attached their IDs to the local Starter plan fields. The plans cannot be edited/deleted; no subscription or payment was created. See GATEWAY_QA.md for IDs and remaining QA.
+
+Verification follow-up (2026-10-29): full MySQL test suite passes **97 tests, 750 assertions**. Updated a stale legal-page test assertion to match the current explicit `SAMPLE DRAFT` and `NOT APPROVED` labels.
+
+Phase 7 audit follow-up (2026-10-29): invoice edits now record a transactional `invoice.lines_replaced` summary because relationship bulk deletion skips model audit hooks. The event stores removed/replacement counts only. Automated tests were not run for this change.
+
+Phase 7 audit follow-up: workspace profile query-builder updates now log changed field names, and logo upload/removal records the operation without persisting private paths. Automated tests were not run for this change.
+
+Phase 7 audit follow-up: invitation reissues now use a distinct `invitation.resent` action so activity history accurately reflects the workflow. Email addresses and token data remain excluded. Automated tests were not run for this change.
+
+Phase 7 activity UI follow-up: the workspace timeline now uses readable labels and renders allowlisted audit summaries such as changed field names, invoice line counts, and logo operations. Secret values and free-form detail payloads are not displayed. Automated tests were not run for this change.
+
+Phase 7 release preflight follow-up: `release:check --production` now checks all nonempty tenant SMTP password rows for the expected encrypted format and decryptability under the current APP_KEY. The check reports status only and never prints stored values. Automated tests were not run for this change.
+
+Phase 7 audit follow-up: terminal invoice-email and account-export job callbacks now update tenant models under restored tenant context when possible, so their failure status changes appear in tenant audit history. Suspended/deleted workspace fallback updates remain constrained by trusted tenant and record IDs. Automated tests were not run for this change.
+
 ## Phase 0 — 2026-10-23 — Documentation setup
 
 Added the requested project-specific documentation set under `docs/ai/` and root continuation instructions in `CLAUDE.md` and `AGENTS.md`.

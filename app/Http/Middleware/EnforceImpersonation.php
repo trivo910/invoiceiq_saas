@@ -28,7 +28,7 @@ class EnforceImpersonation
         // Bind the support session to one workspace even if another valid membership exists.
         $request->session()->put('current_tenant_id', $state['tenant_id']);
         if ($request->routeIs('superadmin.impersonation.stop', 'superadmin.logout')) return $next($request);
-        $allowed = ['dashboard', 'invoices.index', 'invoices.pdf', 'invoices.number-preview', 'customers.index', 'customers.search', 'items.index', 'items.search', 'reports.gst', 'reports.gst.export', 'settings.logo.image'];
+        $allowed = ['home', 'dashboard', 'invoices.index', 'invoices.pdf', 'invoices.number-preview', 'customers.index', 'customers.search', 'items.index', 'items.search', 'reports.gst', 'reports.gst.export', 'settings.logo.image'];
         abort_unless(in_array($request->method(), ['GET', 'HEAD']) && in_array($request->route()?->getName(), $allowed, true), 403, 'Impersonation is read-only. Exit it to access administration, billing, or account settings.');
         return $next($request);
     }

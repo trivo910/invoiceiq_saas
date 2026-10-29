@@ -87,3 +87,9 @@ Additive migration `2026_10_28_000002_create_workspace_workflow_tables.php` adds
 All three models use BelongsToTenant. Invoice-linked saves reject foreign invoices and tenant reassignment; requester checks prevent foreign actors. Export requesters are workspace owners at creation and cannot be reassigned; worker/download checks re-evaluate owner permissions. Tenant/invoice deletion cascades workflow rows; referenced user deletion is restricted. Rollback drops only these new tables and their workflow history; file cleanup requires operator handling.
 
 Brand color/template are tenant settings keys, not new columns. Company profile updates synchronize existing tenant identity fields. No original invoice/GST schema changed. Migration applied to local MySQL and invoiceiq_test on 2026-10-28.
+
+## Phase 7 schema
+
+Migration `2026_10_28_000003_add_launch_audit_and_workspace_recovery.php` adds nullable `tenants.deleted_at` and `tenant_audit_logs` (tenant FK, nullable actor user FK, action, target type/id, JSON field-name details, timestamp, tenant/time index). Tenant deletion is soft and retains related rows. Restoring a workspace is a platform-admin action and is audited. There is no automatic hard purge; retention duration requires an approved policy. Tenant audit entries are append-only through application model hooks; a database administrator can still alter them.
+
+Legacy SMTP password values remain readable during transition. Run `php artisan settings:encrypt-smtp-passwords` after backup and with the production APP_KEY set to encrypt existing plaintext rows. Preserve the same APP_KEY across deploys and restore; encrypted values cannot be decrypted after key rotation.

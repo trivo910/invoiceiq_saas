@@ -28,16 +28,17 @@ class CustomerController extends Controller
 
     public function store(Request $request)
     {
+        \App\Support\TaxIdentifiers::normalize($request, ['gstin', 'pan', 'billing_state_code']);
         $data = $request->validate([
             'name'               => 'required|string|max:255',
-            'gstin'              => 'nullable|string|max:20',
-            'pan'                => 'nullable|string|max:12',
+            'gstin'              => ['nullable', 'string', \App\Support\TaxIdentifiers::GSTIN],
+            'pan'                => ['nullable', 'string', \App\Support\TaxIdentifiers::PAN],
             'email'              => 'nullable|email|max:255',
             'phone'              => 'nullable|string|max:20',
             'billing_address'    => 'nullable|string',
             'billing_city'       => 'nullable|string|max:100',
             'billing_state'      => 'nullable|string|max:100',
-            'billing_state_code' => 'nullable|string|max:5',
+            'billing_state_code' => ['nullable', 'string', \App\Support\TaxIdentifiers::STATE],
             'billing_pincode'    => 'nullable|string|max:10',
             'payment_terms'      => 'nullable|integer|min:0',
             'notes'              => 'nullable|string',
@@ -55,16 +56,17 @@ class CustomerController extends Controller
 
     public function update(Request $request, Customer $customer)
     {
+        \App\Support\TaxIdentifiers::normalize($request, ['gstin', 'pan', 'billing_state_code']);
         $data = $request->validate([
             'name'               => 'required|string|max:255',
-            'gstin'              => 'nullable|string|max:20',
-            'pan'                => 'nullable|string|max:12',
+            'gstin'              => ['nullable', 'string', \App\Support\TaxIdentifiers::GSTIN],
+            'pan'                => ['nullable', 'string', \App\Support\TaxIdentifiers::PAN],
             'email'              => 'nullable|email|max:255',
             'phone'              => 'nullable|string|max:20',
             'billing_address'    => 'nullable|string',
             'billing_city'       => 'nullable|string|max:100',
             'billing_state'      => 'nullable|string|max:100',
-            'billing_state_code' => 'nullable|string|max:5',
+            'billing_state_code' => ['nullable', 'string', \App\Support\TaxIdentifiers::STATE],
             'billing_pincode'    => 'nullable|string|max:10',
             'payment_terms'      => 'nullable|integer|min:0',
             'notes'              => 'nullable|string',

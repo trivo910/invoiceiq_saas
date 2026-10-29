@@ -20,11 +20,11 @@ Use this tick-box list during implementation and before release. Phase 0 records
 
 ## Data and uploads
 
-- [ ] Validate GSTIN shape and state code server-side; normalize identifiers.
+- [x] Validate GSTIN/PAN/state-code format server-side and normalize identifiers (format checks only; no registry/checksum verification).
 - [x] Validate uploaded content, MIME, size, and allowed image formats; use generated names and tenant-private paths.
 - [x] Serve logos through an authenticated tenant-scoped route; migrate legacy public logos to private storage.
 - [x] Razorpay secrets are environment-configured; webhook HMAC uses raw request bytes, unique event IDs, and does not log credentials or payloads.
-- [ ] Audit invoice create/edit/delete, role changes, billing events, impersonation, and super-admin actions.
+- [x] Record tenant-owned model create/update/delete events and explicit invitation/membership changes with field names only; distinguish invitation reissues; invoice-line bulk replacement records counts, profile/logo query-builder writes record field/action names, and terminal queue failures use model hooks when tenant context is available; platform actions remain in separate admin audit.
 
 ## Billing and operations
 
@@ -35,7 +35,17 @@ Use this tick-box list during implementation and before release. Phase 0 records
 - [x] Expired trials and configured grace/period end enter read-only mode without data deletion; grace behavior stays open until its approved value is configured.
 - [x] Paid active subscriptions without a confirmed period end fail closed to read-only; legacy subscriptions remain unlimited.
 - [x] A grace duration configured after a recorded failure uses the original provider event time.
-- [ ] Backup/restore, migration rollback, and tenant data export are exercised.
+- [x] Tenant owner export exists; documented restore/rollback procedures and release-check command are available.
+- [ ] Exercise database and private-file backup/restore plus migration rollback/repair on staging.
+
+## Phase 7 controls
+
+- [x] Public legal pages are clearly marked draft until approved; pricing sample values are labeled and approval-gated.
+- [x] Owner workspace deletion requires current password and exact name; data is soft-deleted, retained, and restorable by separately authenticated platform admin.
+- [x] Tenant activity history is scoped and append-only at application model layer; field values and secret payloads are omitted, while generated count/action summaries are safely rendered.
+- [x] Security headers, input rate limits, SMTP secret encryption-at-rest migration path and release configuration report added; production preflight detects plaintext or undecryptable stored SMTP passwords without exposing them.
+- [ ] Review full audit event coverage, retention/purge policy, and release behavior in browser/staging. Invoice-line bulk replacement is explicitly covered; normal and exception responses are covered by automated header checks.
+- [ ] Verify legal approval, real SMTP/provider delivery, VPS deployment, backup restoration and rollback before release.
 
 
 ## Phase 5 verified controls
@@ -48,7 +58,7 @@ Use this tick-box list during implementation and before release. Phase 0 records
 - [x] Platform service authorization and explicit context restoration; no global tenant-scope bypass.
 - [x] Coupon validation and escaped/date-scoped announcements; immutable referenced plan price contracts and protected system/referenced plan deletion.
 
-These checks do not complete Phase 7 business-record audit coverage, MFA/recovery UI, production deployment verification, or Phase 4 provider QA. Audit immutability is at the application layer, not tamper-proof database storage.
+These Phase 5 checks do not complete MFA/recovery UI, production deployment verification, or Phase 4 provider QA. Audit immutability is at the application layer, not tamper-proof database storage.
 
 
 ## Phase 6 verified controls

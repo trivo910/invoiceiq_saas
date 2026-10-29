@@ -12,6 +12,8 @@ Route::prefix('superadmin')->name('superadmin.')->controller(SuperAdminControlle
         Route::get('tenants', 'tenants')->name('tenants');
         Route::get('tenants/{tenant}', 'tenant')->name('tenant');
         Route::patch('tenants/{tenant}', 'updateTenant')->middleware('throttle:20,1')->name('tenant.update');
+        Route::delete('tenants/{tenant}', 'deleteTenant')->middleware('throttle:5,1')->name('tenant.delete');
+        Route::post('tenants/{tenant}/restore', 'restoreTenant')->middleware('throttle:5,1')->name('tenant.restore');
         Route::post('tenants/{tenant}/impersonate', 'impersonate')->middleware('throttle:5,1')->name('impersonate');
         Route::post('impersonation/stop', 'stopImpersonation')->name('impersonation.stop');
         Route::get('audit', 'audit')->name('audit');

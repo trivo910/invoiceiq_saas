@@ -48,6 +48,8 @@ The user resumed gateway QA on 2026-10-28; the earlier deferral is lifted. See G
 | 6 | Tenant branding/PDF, public token link, email, exports |
 | 7 | Landing/pricing/legal pages, shared-host cron/queue, backups and deployment rollback |
 
+Latest full suite after Phase 7: **97 tests, 750 assertions** (2026-10-29). Phase 7 focused MySQL regression coverage (7 tests, 41 assertions): public home/pricing/draft legal routes and invalid legal path; authenticated activity screen and security/no-store headers including error responses; audit field-name-only behavior and append-only guard; SMTP password encryption at rest/decryption through settings and migration of legacy plaintext without secret output; owner password-confirmed workspace soft deletion and separate platform-admin restoration/audit. The full suite was rerun after syncing the legal draft assertion with the current `SAMPLE DRAFT`/`NOT APPROVED` wording. Command smoke checks: migration `--pretend` then apply to local/test MySQL, `php artisan route:list`, `php artisan release:check` and `php artisan release:check --production`. The configuration command is not a substitute for live SMTP, gateway, VPS or backup/restore tests.
+
 ### Role-aware restriction regression — 2026-10-27
 
 Added `test_non_owner_plan_restrictions_return_to_dashboard_and_reject_json_writes`, covering expired-trial writes, invoice quota, denied GST reports, visible dashboard warnings, JSON 403 responses, and continued owner-only Billing access. The fixture deliberately retains the legacy global admin role while using a staff workspace membership.

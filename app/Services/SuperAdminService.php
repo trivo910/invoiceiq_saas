@@ -43,7 +43,7 @@ class SuperAdminService
             ->whereNotIn('status', ['pending', 'checkout_failed'])->groupBy('tenant_id');
         $subscriptions = DB::table('tenant_subscriptions as s')->join('tenants as t', 't.id', '=', 's.tenant_id')
             ->join('plans as p', 'p.id', '=', 's.plan_id')->whereIn('s.id', $latest)
-            ->where('t.status', 'active')->select('s.*', 'p.code', 'p.monthly_price_paise', 'p.yearly_price_paise')->get();
+            ->where('t.status', 'active')->whereNull('t.deleted_at')->select('s.*', 'p.code', 'p.monthly_price_paise', 'p.yearly_price_paise')->get();
         $active = $subscriptions->filter(fn ($s) => $s->status === 'active' && ($s->code === 'legacy' || ($s->current_period_ends_at && $s->current_period_ends_at > now())));
         $trial = $subscriptions->filter(fn ($s) => $s->status === 'trialing' && $s->trial_ends_at && $s->trial_ends_at > now())->count();
         $mrr = $active->whereNotIn('code', ['trial', 'legacy'])->whereNotNull('razorpay_subscription_id')

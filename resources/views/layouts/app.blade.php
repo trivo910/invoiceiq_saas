@@ -184,6 +184,9 @@
             {{-- Admin-only section --}}
             @if(auth()->check() && auth()->user()->isAdmin())
             <div class="nav-section">Admin</div>
+            @if(auth()->user()->hasRole(['owner', 'admin']))
+            <a href="{{ route('workspace.activity') }}" class="nav-item {{ request()->routeIs('workspace.activity') ? 'active' : '' }}" data-tooltip="Workspace activity"><span class="nav-label">Workspace activity</span></a>
+            @endif
             <a href="{{ route('users.index') }}" class="nav-item {{ request()->routeIs('users.*') ? 'active' : '' }}" data-tooltip="Users">
                 <svg viewBox="0 0 16 16" fill="none">
                     <circle cx="6" cy="5" r="2.5" stroke="currentColor" stroke-width="1.3"/>

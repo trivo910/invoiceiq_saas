@@ -1414,3 +1414,61 @@ Stack trace:
 [2026-10-28 17:09:06] testing.WARNING: Razorpay webhook contained conflicting subscription IDs. {"event_id":"evt_subscription_entity_mismatch","tenant_id":5889,"subscription_id":6283} 
 [2026-10-28 17:54:15] testing.WARNING: Razorpay webhook reused a payment ID bound to another billing record. {"event_id":"evt_conflicting_payment_binding","provider_payment_id":"pay_shared_conflict","tenant_id":6020,"subscription_id":6423} 
 [2026-10-28 17:54:16] testing.WARNING: Razorpay webhook contained conflicting subscription IDs. {"event_id":"evt_subscription_entity_mismatch","tenant_id":6021,"subscription_id":6424} 
+[2026-10-29 15:51:17] local.ERROR: Writing to C:/Users/91727/AppData/Roaming/PsySH/psysh_history is not allowed. {"exception":"[object] (ErrorException(code: 0): Writing to C:/Users/91727/AppData/Roaming/PsySH/psysh_history is not allowed. at D:/xampp/htdocs/invoicingIQ/vendor/psy/psysh/src/ConfigPaths.php:480)
+[stacktrace]
+#0 D:/xampp/htdocs/invoicingIQ/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(258): Illuminate/Foundation/Bootstrap/HandleExceptions->handleError(1024, 'Writing to C:/U...', 'D://xampp//htdocs...', 480)
+#1 [internal function]: Illuminate/Foundation/Bootstrap/HandleExceptions->Illuminate/Foundation/Bootstrap/{closure}(1024, 'Writing to C:/U...', 'D://xampp//htdocs...', 480)
+#2 D:/xampp/htdocs/invoicingIQ/vendor/psy/psysh/src/ConfigPaths.php(480): trigger_error('Writing to C:/U...', 1024)
+#3 D:/xampp/htdocs/invoicingIQ/vendor/psy/psysh/src/Configuration.php(1068): Psy/ConfigPaths::touchFileWithMkdir('C:/Users/91727/...')
+#4 D:/xampp/htdocs/invoicingIQ/vendor/psy/psysh/src/Configuration.php(1106): Psy/Configuration->setHistoryFile('C:/Users/91727/...')
+#5 D:/xampp/htdocs/invoicingIQ/vendor/psy/psysh/src/Configuration.php(1285): Psy/Configuration->getHistoryFile()
+#6 D:/xampp/htdocs/invoicingIQ/vendor/psy/psysh/src/Shell.php(192): Psy/Configuration->getReadline()
+#7 D:/xampp/htdocs/invoicingIQ/vendor/psy/psysh/src/Shell.php(2213): Psy/Shell->boot()
+#8 D:/xampp/htdocs/invoicingIQ/vendor/laravel/tinker/src/Console/TinkerCommand.php(77): Psy/Shell->execute('dump(DB::table(...')
+#9 D:/xampp/htdocs/invoicingIQ/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): Laravel/Tinker/Console/TinkerCommand->handle()
+#10 D:/xampp/htdocs/invoicingIQ/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate/Container/BoundMethod::Illuminate/Container/{closure}()
+#11 D:/xampp/htdocs/invoicingIQ/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(95): Illuminate/Container/Util::unwrapIfClosure(Object(Closure))
+#12 D:/xampp/htdocs/invoicingIQ/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate/Container/BoundMethod::callBoundMethod(Object(Illuminate/Foundation/Application), Array, Object(Closure))
+#13 D:/xampp/htdocs/invoicingIQ/vendor/laravel/framework/src/Illuminate/Container/Container.php(696): Illuminate/Container/BoundMethod::call(Object(Illuminate/Foundation/Application), Array, Array, NULL)
+#14 D:/xampp/htdocs/invoicingIQ/vendor/laravel/framework/src/Illuminate/Console/Command.php(213): Illuminate/Container/Container->call(Array)
+#15 D:/xampp/htdocs/invoicingIQ/vendor/symfony/console/Command/Command.php(341): Illuminate/Console/Command->execute(Object(Symfony/Component/Console/Input/ArgvInput), Object(Illuminate/Console/OutputStyle))
+#16 D:/xampp/htdocs/invoicingIQ/vendor/laravel/framework/src/Illuminate/Console/Command.php(182): Symfony/Component/Console/Command/Command->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Illuminate/Console/OutputStyle))
+#17 D:/xampp/htdocs/invoicingIQ/vendor/symfony/console/Application.php(1125): Illuminate/Console/Command->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#18 D:/xampp/htdocs/invoicingIQ/vendor/symfony/console/Application.php(357): Symfony/Component/Console/Application->doRunCommand(Object(Laravel/Tinker/Console/TinkerCommand), Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#19 D:/xampp/htdocs/invoicingIQ/vendor/symfony/console/Application.php(196): Symfony/Component/Console/Application->doRun(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#20 D:/xampp/htdocs/invoicingIQ/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony/Component/Console/Application->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#21 D:/xampp/htdocs/invoicingIQ/vendor/laravel/framework/src/Illuminate/Foundation/Application.php(1235): Illuminate/Foundation/Console/Kernel->handle(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#22 D:/xampp/htdocs/invoicingIQ/artisan(6): Illuminate/Foundation/Application->handleCommand(Object(Symfony/Component/Console/Input/ArgvInput))
+#23 {main}
+"} 
+[2026-10-29 15:51:17] local.ERROR: Writing to C:/Users/91727/AppData/Roaming/PsySH/psysh_history is not allowed. {"exception":"[object] (ErrorException(code: 0): Writing to C:/Users/91727/AppData/Roaming/PsySH/psysh_history is not allowed. at D:/xampp/htdocs/invoicingIQ/vendor/psy/psysh/src/ConfigPaths.php:480)
+[stacktrace]
+#0 D:/xampp/htdocs/invoicingIQ/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(258): Illuminate/Foundation/Bootstrap/HandleExceptions->handleError(1024, 'Writing to C:/U...', 'D://xampp//htdocs...', 480)
+#1 [internal function]: Illuminate/Foundation/Bootstrap/HandleExceptions->Illuminate/Foundation/Bootstrap/{closure}(1024, 'Writing to C:/U...', 'D://xampp//htdocs...', 480)
+#2 D:/xampp/htdocs/invoicingIQ/vendor/psy/psysh/src/ConfigPaths.php(480): trigger_error('Writing to C:/U...', 1024)
+#3 D:/xampp/htdocs/invoicingIQ/vendor/psy/psysh/src/Configuration.php(1068): Psy/ConfigPaths::touchFileWithMkdir('C:/Users/91727/...')
+#4 D:/xampp/htdocs/invoicingIQ/vendor/psy/psysh/src/Configuration.php(1106): Psy/Configuration->setHistoryFile('C:/Users/91727/...')
+#5 D:/xampp/htdocs/invoicingIQ/vendor/psy/psysh/src/Configuration.php(1285): Psy/Configuration->getHistoryFile()
+#6 D:/xampp/htdocs/invoicingIQ/vendor/psy/psysh/src/Shell.php(192): Psy/Configuration->getReadline()
+#7 D:/xampp/htdocs/invoicingIQ/vendor/psy/psysh/src/Shell.php(2213): Psy/Shell->boot()
+#8 D:/xampp/htdocs/invoicingIQ/vendor/laravel/tinker/src/Console/TinkerCommand.php(77): Psy/Shell->execute('dump(////App////Mod...')
+#9 D:/xampp/htdocs/invoicingIQ/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): Laravel/Tinker/Console/TinkerCommand->handle()
+#10 D:/xampp/htdocs/invoicingIQ/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate/Container/BoundMethod::Illuminate/Container/{closure}()
+#11 D:/xampp/htdocs/invoicingIQ/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(95): Illuminate/Container/Util::unwrapIfClosure(Object(Closure))
+#12 D:/xampp/htdocs/invoicingIQ/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate/Container/BoundMethod::callBoundMethod(Object(Illuminate/Foundation/Application), Array, Object(Closure))
+#13 D:/xampp/htdocs/invoicingIQ/vendor/laravel/framework/src/Illuminate/Container/Container.php(696): Illuminate/Container/BoundMethod::call(Object(Illuminate/Foundation/Application), Array, Array, NULL)
+#14 D:/xampp/htdocs/invoicingIQ/vendor/laravel/framework/src/Illuminate/Console/Command.php(213): Illuminate/Container/Container->call(Array)
+#15 D:/xampp/htdocs/invoicingIQ/vendor/symfony/console/Command/Command.php(341): Illuminate/Console/Command->execute(Object(Symfony/Component/Console/Input/ArgvInput), Object(Illuminate/Console/OutputStyle))
+#16 D:/xampp/htdocs/invoicingIQ/vendor/laravel/framework/src/Illuminate/Console/Command.php(182): Symfony/Component/Console/Command/Command->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Illuminate/Console/OutputStyle))
+#17 D:/xampp/htdocs/invoicingIQ/vendor/symfony/console/Application.php(1125): Illuminate/Console/Command->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#18 D:/xampp/htdocs/invoicingIQ/vendor/symfony/console/Application.php(357): Symfony/Component/Console/Application->doRunCommand(Object(Laravel/Tinker/Console/TinkerCommand), Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#19 D:/xampp/htdocs/invoicingIQ/vendor/symfony/console/Application.php(196): Symfony/Component/Console/Application->doRun(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#20 D:/xampp/htdocs/invoicingIQ/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony/Component/Console/Application->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#21 D:/xampp/htdocs/invoicingIQ/vendor/laravel/framework/src/Illuminate/Foundation/Application.php(1235): Illuminate/Foundation/Console/Kernel->handle(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#22 D:/xampp/htdocs/invoicingIQ/artisan(6): Illuminate/Foundation/Application->handleCommand(Object(Symfony/Component/Console/Input/ArgvInput))
+#23 {main}
+"} 
+[2026-10-29 17:15:31] testing.WARNING: Razorpay webhook reused a payment ID bound to another billing record. {"event_id":"evt_conflicting_payment_binding","provider_payment_id":"pay_shared_conflict","tenant_id":6891,"subscription_id":7357} 
+[2026-10-29 17:15:31] testing.WARNING: Razorpay webhook contained conflicting subscription IDs. {"event_id":"evt_subscription_entity_mismatch","tenant_id":6892,"subscription_id":7358} 
+[2026-10-29 17:16:40] testing.WARNING: Razorpay webhook reused a payment ID bound to another billing record. {"event_id":"evt_conflicting_payment_binding","provider_payment_id":"pay_shared_conflict","tenant_id":7014,"subscription_id":7489} 
+[2026-10-29 17:16:41] testing.WARNING: Razorpay webhook contained conflicting subscription IDs. {"event_id":"evt_subscription_entity_mismatch","tenant_id":7015,"subscription_id":7490} 

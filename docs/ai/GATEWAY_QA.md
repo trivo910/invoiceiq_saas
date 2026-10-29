@@ -1,6 +1,6 @@
 # Razorpay sandbox QA
 
-> Latest finding: API credentials are valid (payments GET returns 200); plans and subscriptions GET return 401 with the same credentials. See the corrected diagnosis at the end. Earlier invalid-credential assumptions are superseded.
+> Previous finding: payments GET returned 200 while plans/subscriptions returned 401. On 2026-10-29, the read-only Plans GET returned 200 with zero plans; the current Test Mode dashboard also shows the first pricing plan can be created. Earlier endpoint-specific 401 findings are historical and the access state has changed.
 
 ## Current run: 2026-10-28
 
@@ -156,3 +156,20 @@ Support message draft (not sent):
 ### Provider support pending - 2026-10-28
 
 User confirmed submitting a support ticket for the Test Mode Subscriptions dashboard failure and endpoint-specific API 401. Ticket ID/ETA are unknown. Preserve the validated API pair and defer repeated identical provider requests until support responds or account state changes. Provider-backed subscription QA remains incomplete. Existing successful synthetic webhook evidence remains local/application evidence only.
+
+### Subscription product available - 2026-10-29
+
+After the user shared the updated Test Mode Subscriptions dashboard screenshot, the private read-only `GET /v1/plans?count=100` probe returned HTTP 200 with `plan_count: 0`; the loaded Test Mode credential pair matched `.env`, with no whitespace, and no credentials were printed. The dashboard now shows an enabled “Create a pricing plan” action and the subscription action remains locked until a plan exists. This indicates API access is now available and the Test Mode account has no plans yet; it does not prove checkout/webhook delivery.
+
+Razorpay plan definitions are reusable for subscriptions and cannot be edited/deleted after creation. Approved demo catalog values are Starter ₹499 monthly/₹4,990 yearly, Pro ₹1,499/₹14,990, and Business ₹3,999/₹39,990. Monthly/yearly cycle counts (12/2) are subscription `total_count` settings, not the plan billing interval.
+
+### QA Starter plans created - 2026-10-29
+
+At the user's request, created two clearly labeled non-commercial Test Mode plans using the approved sample Starter prices, then attached their IDs to the local `starter` plan record. Repeated the safe tagged lookup and verified frequency, interval, INR amount, and local mapping; the rerun did not create duplicates.
+
+| QA plan | Amount / frequency | Razorpay plan ID | Local field |
+|---|---:|---|---|
+| InvoiceIQ QA Starter Monthly | ₹499 / monthly (interval 1) | `plan_TtgrwbxWmjwMXJ` | `razorpay_plan_monthly_id` |
+| InvoiceIQ QA Starter Yearly | ₹4,990 / yearly (interval 1) | `plan_TtgrxK0onQQQgF` | `razorpay_plan_yearly_id` |
+
+No subscription or payment was created. The yearly/monthly counts remain 2/12 for the later subscription-create QA configuration. The plans are Test Mode objects and cannot be edited/deleted; no Pro or Business provider plans have been created.

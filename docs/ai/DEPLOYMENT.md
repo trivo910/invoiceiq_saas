@@ -23,11 +23,22 @@ Point the document root to Laravel `public/` where supported, keep application/s
 
 ## VPS with nginx (future verified runbook)
 
-Use a supported PHP-FPM version, nginx root at `public/`, deny access to dotfiles, configure TLS, database credentials, file permissions, logs/rotation, backups, and deployment rollback. Use cron for scheduler and an approved short-lived database queue worker strategy; no Redis/Horizon or daemon requirement.
+VPS/nginx is the user's intended future target. `deploy/nginx.conf.example` is a starting server block only: replace hostname, PHP-FPM socket and TLS configuration, then validate on the target distribution. Keep the full application outside the document root and point nginx only to the release's `public/` directory. Laravel's deployment guidance requires serving the public directory, and its scheduler uses a single cron call each minute. [Laravel deployment](https://laravel.com/framework/docs/11.x/deployment) · [Laravel scheduler](https://laravel.com/framework/docs/11.x/scheduling)
+
+Suggested release flow, to be rehearsed on staging before production:
+
+1. Create a new release directory; install locked Composer dependencies with production flags. Keep `.env`, `storage`, and release data outside the web root as appropriate. Configure `APP_ENV=production`, `APP_DEBUG=false`, HTTPS `APP_URL`, `SESSION_SECURE_COOKIE=true`, MySQL, database queue, SMTP and approved billing/legal settings. Create a unique APP_KEY once; preserve it across releases and backups.
+2. Back up MySQL and `storage/app/tenants` plus any private workflow/export files before schema changes. Use a restricted DB account and a password prompt, not `-pPASSWORD`. Example: `mysqldump --single-transaction --quick -u invoiceiq_backup -p invoiceiq > invoiceiq-before-release.sql`. MySQL notes that `--single-transaction` consistency applies to transactional tables and concurrent DDL must be avoided. [MySQL mysqldump](https://dev.mysql.com/doc/refman/8.0/en/mysqldump.html)
+3. Restore the dump into an isolated staging database and restore matching private files and APP_KEY. Verify counts and perform a real restore test before production. `--single-transaction` does not back up tenant files or APP_KEY.
+4. Review `php artisan migrate --pretend`, then run `php artisan migrate --force` and `php artisan optimize`. Run `php artisan release:check --production` after migration to confirm no pending migrations and production configuration gates. Run `php artisan settings:encrypt-smtp-passwords` once after the backup to encrypt any legacy plaintext SMTP setting rows. Run `php artisan tenants:migrate-legacy-logos` only if the installation has legacy public logos.
+5. Switch nginx to the release, verify health/login/PDF/private-file denial and check logs. Keep the prior release for code rollback. Database rollback may be unsafe after writes or irreversible schema/data changes; restore to a separate DB and rehearse a forward repair or approved restore plan rather than blindly running `migrate:rollback`.
+6. Configure cron (under the application user) for `* * * * * cd /var/www/invoiceiq/current && php artisan schedule:run >> /dev/null 2>&1`. The current schedule launches a bounded database queue worker and daily workflow prune. Confirm host resource limits, failed jobs, mail delivery, file permissions, log rotation and process overlap behavior.
+
+This VPS recipe and nginx sample are not a deployment verification. No VPS, DNS, TLS, SMTP, cron, backup restore, rollback or production legal/billing review has been performed. See `LAUNCH_CHECKLIST.md` for release gates. Hostinger guidance remains a secondary unverified option.
 
 ## Open work
 
-Confirm scheduler commands, permissions, cron syntax, Hostinger plan limits, queue worker invocation, and Laravel 11 deployment commands before calling this runbook production-ready. Never put real secrets in docs.
+Confirm scheduler commands, permissions, cron syntax, Hostinger plan limits, queue worker invocation, nginx/TLS configuration and Laravel 11 deployment commands against the actual VPS before calling this runbook production-ready. Never put real secrets in docs.
 
 ### Sandbox QA update ? 2026-10-28
 

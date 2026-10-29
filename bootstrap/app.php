@@ -23,7 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'plan.feature' => \App\Http\Middleware\CheckPlanFeature::class,
         ]);
         $middleware->validateCsrfTokens(except: ['webhooks/razorpay']);
-        $middleware->web(append: [\App\Http\Middleware\EnforceImpersonation::class]);
+        $middleware->web(append: [\App\Http\Middleware\EnforceImpersonation::class, \App\Http\Middleware\SecurityHeaders::class]);
         $middleware->appendToPriorityList(\Illuminate\Session\Middleware\StartSession::class, \App\Http\Middleware\EnforceImpersonation::class);
         $middleware->prependToPriorityList(\Illuminate\Routing\Middleware\SubstituteBindings::class, \App\Http\Middleware\RequireSuperAdmin::class);
         $middleware->appendToPriorityList(
@@ -32,5 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
         );
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->respond(function (\Symfony\Component\HttpFoundation\Response $response) {
+            return app(\App\Http\Middleware\SecurityHeaders::class)->apply(request(), $response);
+        });
     })->create();

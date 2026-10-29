@@ -1,14 +1,17 @@
 # InvoiceIQ — GST Billing Suite
 **Laravel 11 + Blade | MySQL | PHP 8.2+**
 
-## Quick Setup (4 commands)
+## Quick Setup
 
 ```bash
 cp .env.example .env
 composer install
-php artisan key:generate && php artisan migrate --seed
+php artisan key:generate
+php artisan migrate
 php artisan serve
 ```
+
+Or run `bash setup.sh` after preparing `.env` and creating the MySQL database. The helper preserves an existing APP_KEY and does not seed sample data or create a platform administrator. See the platform administration section below for interactive admin setup.
 
 Open: **http://localhost:8000**
 
@@ -95,3 +98,7 @@ Phase 5 provides platform metrics, workspace controls, plan/coupon/announcement 
 Phase 6 adds Settings -> Invoice branding (Classic/Accent), per-invoice Share / Email, and Data exports for owner/admin/accountant. Public links are expiring/revocable view-only PDFs; treat their URLs as private. Advanced branding follows the plan entitlement. Full workspace ZIP exports are owner-only, private and expire after 24 hours; credentials/tokens are excluded.
 
 Invoice mail and workspace ZIPs use the database queue. With PHP ZipArchive enabled, configure cron to run `php artisan schedule:run` every minute. The schedule runs a bounded worker and daily `workflows:prune`; inspect it with `php artisan schedule:list`. In local development, deliberately run `php artisan queue:work database --stop-when-empty --max-time=50 --tries=3 --timeout=60` when ready to process queued mail/exports. A log mailer does not deliver real mail. Keep APP_KEY secure for encrypted delivery records. See `docs/ai/WORKFLOWS.md` for permissions, privacy, worker operation and manual QA.
+
+## Launch status
+
+The public Terms and Privacy pages are draft placeholders; legal entity, contact, legal text, and published pricing need operator approval. Workspace owners can request soft deletion after password/name confirmation; deleted workspaces are retained for platform-admin recovery. Run `php artisan release:check` for a configuration snapshot, and use `docs/ai/LAUNCH_CHECKLIST.md` plus `docs/ai/DEPLOYMENT.md` before VPS release. A passing configuration report does not verify Razorpay, real SMTP, backup restoration or server deployment.

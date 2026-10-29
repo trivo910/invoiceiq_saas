@@ -45,6 +45,10 @@ class RazorpayWebhookService
             }
 
             $tenant = \App\Models\Tenant::find($subscriptionRow->tenant_id);
+            if (! $tenant && \App\Models\Tenant::onlyTrashed()->whereKey($subscriptionRow->tenant_id)->exists()) {
+                DB::table('billing_events')->where('provider_event_id', $eventId)->update(['tenant_id' => $subscriptionRow->tenant_id, 'processed_at' => now(), 'updated_at' => now()]);
+                return true;
+            }
             if (! $tenant) throw new RuntimeException('Webhook subscription tenant no longer exists.');
             $this->context->set($tenant);
             try {

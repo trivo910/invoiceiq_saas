@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Route;
 
 require __DIR__.'/superadmin.php';
 require __DIR__.'/workflows.php';
+require __DIR__.'/launch.php';
 
 Route::post('/webhooks/razorpay', RazorpayWebhookController::class)->middleware('throttle:120,1')->name('billing.webhook');
 
@@ -62,7 +63,7 @@ Route::post('/invitations/{token}', [InvitationController::class, 'accept'])->mi
 Route::middleware(['auth', 'verified', 'tenant', 'onboarded'])->group(function () {
 
     // Dashboard
-    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // ── Invoices ───────────────────────────────────────────────
     // Read (all roles)
@@ -71,7 +72,7 @@ Route::middleware(['auth', 'verified', 'tenant', 'onboarded'])->group(function (
     Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('invoices.pdf');
 
     // Write (admin + staff)
-    Route::middleware(['can:write-records', 'subscription'])->group(function () {
+    Route::middleware(['can:write-records', 'subscription', 'throttle:60,1'])->group(function () {
         Route::get('invoices/create', [InvoiceController::class, 'create'])->name('invoices.create');
         Route::post('invoices', [InvoiceController::class, 'store'])->middleware('plan.limit:invoices')->name('invoices.store');
         Route::get('invoices/{invoice}/edit', [InvoiceController::class, 'edit'])->name('invoices.edit');
@@ -84,23 +85,23 @@ Route::middleware(['auth', 'verified', 'tenant', 'onboarded'])->group(function (
 
     // ── Customers ──────────────────────────────────────────────
     // Search used during invoice creation — all roles
-    Route::get('customers/search', [CustomerController::class, 'search'])->name('customers.search');
+    Route::get('customers/search', [CustomerController::class, 'search'])->middleware('throttle:120,1')->name('customers.search');
 
     // Read
     Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');
 
     // Write
-    Route::middleware(['can:write-records', 'subscription'])->group(function () {
+    Route::middleware(['can:write-records', 'subscription', 'throttle:60,1'])->group(function () {
         Route::post('customers', [CustomerController::class, 'store'])->name('customers.store');
         Route::put('customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
         Route::delete('customers/{customer}', [CustomerController::class, 'destroy'])->middleware('can:delete-records')->name('customers.destroy');
     });
 
     // ── Items ──────────────────────────────────────────────────
-    Route::get('items/search', [ItemController::class, 'search'])->name('items.search');
+    Route::get('items/search', [ItemController::class, 'search'])->middleware('throttle:120,1')->name('items.search');
     Route::get('items', [ItemController::class, 'index'])->name('items.index');
 
-    Route::middleware(['can:write-records', 'subscription'])->group(function () {
+    Route::middleware(['can:write-records', 'subscription', 'throttle:60,1'])->group(function () {
         Route::post('items', [ItemController::class, 'store'])->name('items.store');
         Route::put('items/{item}', [ItemController::class, 'update'])->name('items.update');
         Route::delete('items/{item}', [ItemController::class, 'destroy'])->middleware('can:delete-records')->name('items.destroy');
@@ -116,14 +117,14 @@ Route::middleware(['auth', 'verified', 'tenant', 'onboarded'])->group(function (
     // ── Admin-only ─────────────────────────────────────────────
     Route::middleware('role:owner,admin')->group(function () {
         Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');
-        Route::post('settings', [SettingsController::class, 'update'])->middleware('subscription')->name('settings.update');
-        Route::post('settings/logo', [SettingsController::class, 'uploadLogo'])->middleware('subscription')->name('settings.logo.upload');
-        Route::delete('settings/logo', [SettingsController::class, 'removeLogo'])->middleware('subscription')->name('settings.logo.remove');
-        Route::post('settings/test-email', [SettingsController::class, 'testEmail'])->middleware('subscription')->name('settings.test-email');
+        Route::post('settings', [SettingsController::class, 'update'])->middleware(['subscription', 'throttle:30,1'])->name('settings.update');
+        Route::post('settings/logo', [SettingsController::class, 'uploadLogo'])->middleware(['subscription', 'throttle:10,1'])->name('settings.logo.upload');
+        Route::delete('settings/logo', [SettingsController::class, 'removeLogo'])->middleware(['subscription', 'throttle:10,1'])->name('settings.logo.remove');
+        Route::post('settings/test-email', [SettingsController::class, 'testEmail'])->middleware(['subscription', 'throttle:3,1'])->name('settings.test-email');
 
         Route::get('users', [UsersController::class, 'index'])->name('users.index');
         Route::post('users', [UsersController::class, 'store'])->middleware(['subscription', 'throttle:10,1'])->name('users.store');
-        Route::patch('users/{user}/role', [UsersController::class, 'updateRole'])->middleware('subscription')->name('users.role');
-        Route::delete('users/{user}', [UsersController::class, 'destroy'])->middleware('subscription')->name('users.destroy');
+        Route::patch('users/{user}/role', [UsersController::class, 'updateRole'])->middleware(['subscription', 'throttle:30,1'])->name('users.role');
+        Route::delete('users/{user}', [UsersController::class, 'destroy'])->middleware(['subscription', 'throttle:30,1'])->name('users.destroy');
     });
 });

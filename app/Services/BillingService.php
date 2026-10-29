@@ -20,7 +20,7 @@ class BillingService
 
     public function canWrite(Tenant $tenant): bool
     {
-        if ($tenant->status !== 'active') return false;
+        if ($tenant->status !== 'active' || $tenant->trashed()) return false;
         $subscription = $this->subscription($tenant);
         if (! $subscription) return false;
 

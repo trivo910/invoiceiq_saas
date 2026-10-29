@@ -1,0 +1,33 @@
+server {
+    listen 80;
+    server_name invoicing.example.com;
+    root /var/www/invoiceiq/current/public;
+    index index.php;
+    charset utf-8;
+
+    # Serve only public assets and route application requests through Laravel.
+    location / { try_files $uri $uri/ /index.php?$query_string; }
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location = /robots.txt { access_log off; log_not_found off; }
+
+    # Block hidden files, except the ACME challenge path.
+    location ~ /.(?!well-known).* { deny all; }
+
+    # PHP-FPM socket/version must match the VPS installation.
+    location ~ \.php$ {
+        try_files $uri =404;
+        fastcgi_pass unix:/run/php/php8.2-fpm.sock;
+        fastcgi_index index.php;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        fastcgi_param DOCUMENT_ROOT $realpath_root;
+    }
+
+    location ~* \.(?:css|js|jpg|jpeg|gif|png|svg|webp|ico|woff2?)$ {
+        expires 7d;
+        access_log off;
+        try_files $uri =404;
+    }
+
+    client_max_body_size 12m;
+}

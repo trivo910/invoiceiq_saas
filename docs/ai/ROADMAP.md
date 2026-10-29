@@ -1,6 +1,6 @@
 # SaaS conversion roadmap
 
-Status: **Phases 1-3, 5 and 6 implementation ready; Phase 4 provider/commercial work pending. Operator/manual reviews remain open.**
+Status: **Phases 1-3, 5 and 6 implementation ready; Phase 7 implementation in progress; Phase 4 provider/commercial and production operations pending.**
 
 ## Phase 0 — Documentation setup
 
@@ -108,10 +108,21 @@ Status: **Phases 1-3, 5 and 6 implementation ready; Phase 4 provider/commercial 
 - [x] Tenant settings/profile synchronization, private uploads and selectable classic/accent PDFs with plan entitlement.
 - [x] Expiring/revocable public invoice PDF capabilities, tenant-aware queued email/history, scoped CSV and private owner account exports.
 
-## Phase 7 — Launch hardening (not started)
+## Phase 7 — Launch hardening (implementation in progress)
 
-- [ ] Landing/pricing/legal pages, audit logs, security hardening, analytics, soft-delete recovery.
-- [ ] Verify Hostinger and VPS deployment, database queue, cron, backup and rollback.
+- [x] Public landing/pricing and fictional/referenceable Terms/Privacy sample drafts with primary legal source links. Prices remain approval-gated; legal samples are explicitly unapproved.
+- [x] Append-only tenant activity events, usage/workflow counts, owner-confirmed soft deletion and platform-only restoration.
+- [x] Record an invoice-line replacement summary when edit flow bulk-deletes prior lines (counts only; same transaction).
+- [x] Record tenant profile field names and logo upload/removal actions where query-builder updates bypass Eloquent audit hooks.
+- [x] Distinguish invitation reissues in the tenant activity audit without recording email addresses or tokens.
+- [x] Render audit action labels and safe count/action summaries in the workspace activity timeline.
+- [x] Audit terminal email/export job failures through tenant model hooks where the workspace remains active.
+- [x] Baseline security headers, per-route throttle additions, SMTP password encryption at rest, tax identifier shape checks/normalization.
+- [x] Safe setup script, release configuration report, VPS/nginx reference and launch checklist.
+- [x] Include a secret-safe production preflight check for legacy SMTP encryption and current APP_KEY compatibility.
+- [ ] Add/verify legacy SMTP password encryption in the deployed DB; review business-record audit coverage and recovery flow in browser.
+- [ ] Approve legal and pricing copy; verify backup/restore and rollback on a staging VPS; configure production HTTPS, SMTP, cron and queue operation.
+- [ ] Resolve Phase 4 Razorpay support/account-access issue and complete account-backed sandbox QA before enabling checkout.
 
 ### Phase 4 continuation — plan restriction navigation
 
@@ -146,6 +157,10 @@ Status: **Phases 1-3, 5 and 6 implementation ready; Phase 4 provider/commercial 
 
 - [x] Record user confirmation of the current dashboard endpoint and repeat successful synthetic public signature/replay checks.
 - [ ] Receive a real provider event (none found in last-24-hour event log) and resolve the repeated API authentication HTTP 401 before account-backed checkout QA.
+
+- [x] Recheck after updated Subscriptions dashboard state: Plans GET now returns 200 with zero records; Test Mode API access is available.
+- [x] Create QA-labeled Test Mode Starter monthly/yearly plans and attach returned IDs to the local sample catalog.
+- [ ] Verify application checkout, real provider delivery, renewal/failure/recovery, and invoice behavior; no subscription/payment has been created yet.
 
 - [x] Validate current Test Mode API credentials independently: payments endpoint returns 200 with correct Basic Auth/TLS.
 - [ ] Investigate Plans/Subscriptions-specific HTTP 401 (both fail with the same valid credentials); confirm Test Mode dashboard product access or obtain provider support findings. Earlier invalid-key assumptions are superseded.

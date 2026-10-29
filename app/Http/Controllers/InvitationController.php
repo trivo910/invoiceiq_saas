@@ -55,6 +55,7 @@ class InvitationController extends Controller
                     $user->markEmailAsVerified();
                 }
                 $tenant->users()->syncWithoutDetaching([$user->id => ['role' => $lockedInvite->role]]);
+                app(\App\Services\TenantAudit::class)->record('membership.invitation_accepted', 'User', $user->id, ['fields' => ['membership']]);
                 $lockedInvite->update(['accepted_at' => now()]);
             });
         } finally {
@@ -68,6 +69,6 @@ class InvitationController extends Controller
 
     private function find(string $token): ?TenantInvitation
     {
-        return TenantInvitation::with('tenant')->where('token_hash', hash('sha256', $token))->first();
+        return TenantInvitation::with('tenant')->whereHas('tenant', fn ($q) => $q->where('status', 'active'))->where('token_hash', hash('sha256', $token))->first();
     }
 }

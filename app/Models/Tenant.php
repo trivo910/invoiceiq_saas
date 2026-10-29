@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Tenant extends Model
 {
+    use \Illuminate\Database\Eloquent\SoftDeletes;
     protected $fillable = [
         'name', 'slug', 'gstin', 'pan', 'state_code', 'address', 'logo_path',
         'currency', 'financial_year_start_month', 'financial_year_start_day',

@@ -9,6 +9,7 @@ use App\Support\TenantContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Log;
@@ -38,6 +39,7 @@ class UsersController extends Controller
                 return;
             }
             $invite = TenantInvitation::updateOrCreate(['tenant_id' => $tenant->id, 'email' => $data['email']], ['invited_by' => $request->user()->id, 'role' => $data['role'], 'token_hash' => hash('sha256', $plainToken), 'expires_at' => now()->addDays(7), 'accepted_at' => null]);
+            app(\App\Services\TenantAudit::class)->record($existing ? 'invitation.resent' : 'invitation.created', 'TenantInvitation', $invite->id, ['fields' => ['role', 'expires_at']]);
         });
         if ($limitReached) return redirect()->route('billing.index')->with('billing_limit', 'Member limit reached for your plan.');
         $url = route('invitations.accept', $plainToken);
@@ -56,7 +58,10 @@ class UsersController extends Controller
         abort_if($user === auth()->id(), 422, 'You cannot remove your own account.');
         abort_unless($tenant->users()->whereKey($user)->exists(), 404);
         abort_if($tenant->users()->wherePivot('role', 'owner')->count() <= 1 && $tenant->users()->whereKey($user)->wherePivot('role', 'owner')->exists(), 422, 'The workspace must keep an owner.');
-        $tenant->users()->detach($user);
+        DB::transaction(function () use ($tenant, $user) {
+            $tenant->users()->detach($user);
+            app(\App\Services\TenantAudit::class)->record('membership.removed', 'User', (int) $user, ['fields' => ['membership']]);
+        });
         return redirect()->route('users.index')->with('success', 'Member removed from this workspace.');
     }
 
@@ -66,7 +71,10 @@ class UsersController extends Controller
         $tenant = app(TenantContext::class)->tenant();
         abort_unless($tenant->users()->whereKey($user)->exists(), 404);
         abort_if($user === auth()->id() || $tenant->users()->whereKey($user)->wherePivot('role', 'owner')->exists(), 422, 'Owner role cannot be changed here.');
-        $tenant->users()->updateExistingPivot($user, ['role' => $data['role']]);
+        DB::transaction(function () use ($tenant, $user, $data) {
+            $tenant->users()->updateExistingPivot($user, ['role' => $data['role']]);
+            app(\App\Services\TenantAudit::class)->record('membership.role_changed', 'User', (int) $user, ['fields' => ['role']]);
+        });
         return redirect()->route('users.index')->with('success', 'Workspace role updated.');
     }
 
