@@ -1,5 +1,19 @@
 # Changelog
 
+## Bulk Import - Step 3 (2026-10-30)
+
+Added explicit import processing for customer/item previews. The user can import Ready rows and skip rows with warnings/errors, or stop the whole batch when any issue remains. Selected business rows, preview statuses and batch completion are committed in one tenant-row-locked transaction after checking subscription write access; repeat processing is rejected. Unique conflicts roll back the whole batch. Current plans have no customer/item quotas, so no unrelated invoice/member quota is applied. Focused upload/import tests pass (6 tests, 54 assertions); the full MySQL suite passes (105 tests, 833 assertions).
+
+## Bulk Import - Step 2 (2026-10-29)
+
+Implemented secure customer/item file upload, automatic header matching with a manual mapping screen, file and row validation, tenant-scoped duplicate warnings, and a paginated preview. Files use private tenant paths; batches/rows use tenant scopes and a composite tenant/batch FK; scheduled cleanup removes expired preview data. Upload and preview do not create or update business records. Added MySQL migration and focused coverage: 5 upload tests/32 assertions plus the 2 template tests/29 assertions. Step 3 processing remains pending.
+
+## Bulk Import - Step 1 (2026-10-29)
+
+Added role-gated Excel/CSV template downloads to customer and item listings. Excel files include three sheets, styles/frozen headings, marked sample rows, instructions and dropdown lists. Added a responsive three-step guide showing Step 1 as available and future upload/review steps as not yet implemented. Templates follow current database/form fields; no import processing, schema migration or record writes were added. Focused suite: 2 tests, 29 assertions.
+
+Screenshot follow-up: corrected the guide dialog positioning and background after the shared CSS reset overrode the browser's default dialog centering and the initial surface token was undefined. Focused template tests and Blade compilation pass.
+
 ## Phase 7 - 2026-10-28 - Launch hardening foundation
 
 Added public landing/pricing/draft legal pages, tenant-scoped activity auditing, owner workspace soft deletion, platform recovery, security headers, route throttles, tax identifier format normalization, SMTP password encryption, setup/release commands and a VPS/nginx reference. Added launch and backup/rollback documentation. Workspace records remain retained; legal/pricing approvals, Razorpay account QA, SMTP, browser review and VPS/backup restore are still open.

@@ -20,7 +20,7 @@ class TenantAudit
 
     public function changed(Model $model, string $action): void
     {
-        if ($model instanceof TenantAuditLog) return;
+        if ($model instanceof TenantAuditLog || (method_exists($model, 'shouldAuditTenantChanges') && ! $model->shouldAuditTenantChanges())) return;
         if ((int) $model->tenant_id !== app(TenantContext::class)->id()) return;
         // Store field names only, never values, message bodies, credentials or tokens.
         $changed = $action === 'created' ? array_keys($model->getAttributes()) : array_keys($model->getChanges());

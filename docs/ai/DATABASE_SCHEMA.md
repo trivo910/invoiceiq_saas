@@ -1,6 +1,6 @@
 # Database schema
 
-## Current schema through Phase 4
+## Current schema
 
 The following describes checked-in migrations through Phase 4. Phase 3 changed application validation/storage behavior without adding schema. The local configured MySQL database was also inspected before and after migration; other deployed databases may differ and require their own preflight.
 
@@ -83,6 +83,8 @@ Additive migration `2026_10_28_000002_create_workspace_workflow_tables.php` adds
 | invoice_share_links | tenant/invoice/creator FKs, unique 64-character token_hash, expiry/revocation, timestamps | Hash only; tenant-scoped admin access, exact capability lookup for public reads |
 | invoice_deliveries | tenant/invoice/requester FKs, status, encrypted mediumtext payload, attempts, sent_at, timestamps | Scalar queue IDs; encrypted recipient/message data, no transport secrets in jobs |
 | account_exports | tenant/requester FKs, status, private path, expiry, timestamps | Owner-only generation/download, tenant path prefix validation |
+| `import_batches` | tenant/user FKs, entity, original filename, private stored path, SHA-256 file hash, status, row counts, source headers and mapping JSON | tenant/entity/created and tenant/hash indexes; unique tenant/id supports composite child key |
+| `import_rows` | tenant/import_batch composite FK, source row number, status, normalized preview payload, errors/warnings JSON | unique tenant/batch/row; tenant/batch/status/row index; batch deletion cascades rows |
 
 All three models use BelongsToTenant. Invoice-linked saves reject foreign invoices and tenant reassignment; requester checks prevent foreign actors. Export requesters are workspace owners at creation and cannot be reassigned; worker/download checks re-evaluate owner permissions. Tenant/invoice deletion cascades workflow rows; referenced user deletion is restricted. Rollback drops only these new tables and their workflow history; file cleanup requires operator handling.
 
@@ -93,3 +95,5 @@ Brand color/template are tenant settings keys, not new columns. Company profile 
 Migration `2026_10_28_000003_add_launch_audit_and_workspace_recovery.php` adds nullable `tenants.deleted_at` and `tenant_audit_logs` (tenant FK, nullable actor user FK, action, target type/id, JSON field-name details, timestamp, tenant/time index). Tenant deletion is soft and retains related rows. Restoring a workspace is a platform-admin action and is audited. There is no automatic hard purge; retention duration requires an approved policy. Tenant audit entries are append-only through application model hooks; a database administrator can still alter them.
 
 Legacy SMTP password values remain readable during transition. Run `php artisan settings:encrypt-smtp-passwords` after backup and with the production APP_KEY set to encrypt existing plaintext rows. Preserve the same APP_KEY across deploys and restore; encrypted values cannot be decrypted after key rotation.
+
+Bulk Import Step 2 adds migration `2026_10_29_000004_create_import_preview_tables.php`. These tenant-owned models use `BelongsToTenant`; import rows also have a composite tenant/batch FK so row data cannot attach to another tenant's batch. Source uploads are private under the tenant path and pruned with preview rows after configured retention. Batch/row state is preview-only; imported customer/item writes are not implemented.

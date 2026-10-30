@@ -48,6 +48,22 @@ Artisan::command('workflows:prune', function () {
 
 Schedule::command('queue:work database --stop-when-empty --max-time=50 --tries=3 --timeout=60')->everyMinute()->withoutOverlapping(2);
 Schedule::command('workflows:prune')->daily()->withoutOverlapping();
+Schedule::command('imports:prune')->daily()->withoutOverlapping();
+
+Artisan::command('imports:prune', function () {
+    $cutoff = now()->subDays((int) config('imports.retention_days', 30));
+    $expired = \Illuminate\Support\Facades\DB::table('import_batches')->where('created_at', '<=', $cutoff)->orderBy('tenant_id')->get(['id', 'tenant_id', 'stored_path']);
+    $count = 0;
+    foreach ($expired as $batch) {
+        $prefix = 'tenants/'.(int) $batch->tenant_id.'/imports/';
+        if (is_string($batch->stored_path) && str_starts_with($batch->stored_path, $prefix)
+            && preg_match('~^tenants/'.preg_quote((string) $batch->tenant_id, '~').'/imports/[0-9a-f-]{36}\.(xlsx|xls|csv)$~D', $batch->stored_path)) {
+            \Illuminate\Support\Facades\Storage::disk('tenant_private')->delete($batch->stored_path);
+        }
+        $count += \Illuminate\Support\Facades\DB::table('import_batches')->where('tenant_id', $batch->tenant_id)->where('id', $batch->id)->delete();
+    }
+    $this->info("Expired import batches removed: {$count}");
+})->purpose('Remove expired tenant import files and preview rows after the configured retention period');
 
 Artisan::command('settings:encrypt-smtp-passwords', function () {
     if (! config('app.key')) { $this->error('APP_KEY is required to encrypt stored SMTP credentials.'); return 1; }

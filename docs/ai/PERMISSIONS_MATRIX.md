@@ -16,6 +16,8 @@ Tenant roles are enforced against the active `tenant_user.role` membership. The 
 | View plan status, payment history, and subscription invoices; manage billing/checkout | Yes | No | No | No | No |
 | Delete/recover workspace | Yes | No | No | No | No |
 | Use super-admin tenant/plan controls | No | No | No | No | No |
+| Download customer/item import templates | Yes | Yes | Yes | No | No |
+| Upload, map headings, preview and process customer/item imports (with subscription write access) | Yes | Yes | Yes | No | No |
 
 Implemented Gates: `manage-workspace` (owner/admin), `write-records` (owner/admin/accountant/staff), and `delete-records` (owner/admin). Super-admin authorization belongs to a separate guard/role, not tenant role strings.
 

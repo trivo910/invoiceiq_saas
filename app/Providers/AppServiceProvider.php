@@ -16,6 +16,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('manage-workspace', fn ($user) => $user->hasRole(['owner', 'admin']));
         Gate::define('write-records', fn ($user) => $user->hasRole(['owner', 'admin', 'accountant', 'staff']));
         Gate::define('delete-records', fn ($user) => $user->hasRole(['owner', 'admin']));
+        Gate::define('import-records', fn ($user) => $user->hasRole(['owner', 'admin', 'accountant']));
         Paginator::useBootstrapFive();
         Paginator::defaultView('partials.pagination');
         \Illuminate\Support\Facades\View::composer('layouts.app', function ($view) {

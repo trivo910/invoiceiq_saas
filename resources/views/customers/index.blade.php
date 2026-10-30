@@ -9,7 +9,10 @@
             <div class="page-title">Customers</div>
             <div class="page-subtitle">{{ $stats['total'] }} customers &middot; {{ $stats['states'] }} {{ $stats['states'] == 1 ? 'state' : 'states' }} covered</div>
         </div>
-        <button class="btn btn-primary" onclick="openM()">+ Add Customer</button>
+        <div class="flex items-center" style="gap:8px;">
+            @can('import-records') @include('imports.template-modal', ['entity' => 'customers']) @endcan
+            <button class="btn btn-primary" onclick="openM()">+ Add Customer</button>
+        </div>
     </div>
 
     {{-- Stat cards --}}

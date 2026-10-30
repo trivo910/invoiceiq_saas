@@ -124,6 +124,14 @@ Status: **Phases 1-3, 5 and 6 implementation ready; Phase 7 implementation in pr
 - [ ] Approve legal and pricing copy; verify backup/restore and rollback on a staging VPS; configure production HTTPS, SMTP, cron and queue operation.
 - [ ] Resolve Phase 4 Razorpay support/account-access issue and complete account-backed sandbox QA before enabling checkout.
 
+## Bulk Import - staged feature
+
+- [x] Step 1: customer/item Excel and CSV templates, instructions/lists, role gating and listing-page guide.
+- [x] Step 1 visual follow-up: center the native dialog and give it an opaque surface under the shared CSS reset.
+- [x] Step 2: private upload, smart header mapping, server-side row validation and review preview; no business rows written.
+- [x] Step 3: transactional tenant-safe processing, skip-valid/stop-on-issues choices, completed row results and repeat-submit protection.
+- [ ] Future import history listing, downloadable error report, and customer/item quotas if those plan limits are approved and added to the schema.
+
 ### Phase 4 continuation — plan restriction navigation
 
 - [x] Route blocked non-owner actions to an accessible dashboard warning and return JSON 403 for read-only, quota, and feature denials; preserve owner Billing redirects.

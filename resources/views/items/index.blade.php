@@ -4,7 +4,10 @@
 <div class="page">
     <div class="page-head flex justify-between items-center">
         <div><div class="page-title">Items &amp; Services</div><div class="page-subtitle">{{ $items->total() }} items in master</div></div>
-        <button class="btn btn-primary" onclick="openM()">+ Add Item</button>
+        <div class="flex items-center" style="gap:8px;">
+            @can('import-records') @include('imports.template-modal', ['entity' => 'items']) @endcan
+            <button class="btn btn-primary" onclick="openM()">+ Add Item</button>
+        </div>
     </div>
     <form method="GET" class="toolbar"><input type="text" name="q" value="{{ request('q') }}" placeholder="Search name, HSN…" class="form-control" style="max-width:320px;"><button class="btn btn-sm">Search</button>@if(request('q'))<a href="{{ route('items.index') }}" class="btn btn-sm btn-ghost">Clear</a>@endif</form>
     <div class="card"><div class="table-wrap"><table class="tbl"><thead><tr><th>Item / Service</th><th>HSN/SAC</th><th>Default Rate</th><th>GST %</th><th>Unit</th><th>Type</th><th class="c">Actions</th></tr></thead><tbody>

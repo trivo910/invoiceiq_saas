@@ -14,6 +14,8 @@ use App\Http\Controllers\ItemController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\BillingController;
+use App\Http\Controllers\ImportTemplateController;
+use App\Http\Controllers\ImportController;
 use App\Http\Controllers\RazorpayWebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -89,6 +91,14 @@ Route::middleware(['auth', 'verified', 'tenant', 'onboarded'])->group(function (
 
     // Read
     Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');
+    Route::middleware('can:import-records')->group(function () {
+        Route::get('customers/import/template', [ImportTemplateController::class, 'excel'])->defaults('entity', 'customers')->name('customers.import.template');
+        Route::get('customers/import/template.csv', [ImportTemplateController::class, 'csv'])->defaults('entity', 'customers')->name('customers.import.template.csv');
+        Route::post('customers/import/upload', [ImportController::class, 'upload'])->defaults('entity', 'customers')->middleware('throttle:5,10')->name('customers.import.upload');
+        Route::get('customers/import/{batch}', [ImportController::class, 'preview'])->defaults('entity', 'customers')->name('customers.import.preview');
+        Route::post('customers/import/{batch}/mapping', [ImportController::class, 'map'])->defaults('entity', 'customers')->middleware('throttle:10,1')->name('customers.import.mapping');
+        Route::post('customers/import/{batch}/process', [ImportController::class, 'process'])->defaults('entity', 'customers')->middleware(['subscription', 'throttle:5,10'])->name('customers.import.process');
+    });
 
     // Write
     Route::middleware(['can:write-records', 'subscription', 'throttle:60,1'])->group(function () {
@@ -100,6 +110,14 @@ Route::middleware(['auth', 'verified', 'tenant', 'onboarded'])->group(function (
     // ── Items ──────────────────────────────────────────────────
     Route::get('items/search', [ItemController::class, 'search'])->middleware('throttle:120,1')->name('items.search');
     Route::get('items', [ItemController::class, 'index'])->name('items.index');
+    Route::middleware('can:import-records')->group(function () {
+        Route::get('items/import/template', [ImportTemplateController::class, 'excel'])->defaults('entity', 'items')->name('items.import.template');
+        Route::get('items/import/template.csv', [ImportTemplateController::class, 'csv'])->defaults('entity', 'items')->name('items.import.template.csv');
+        Route::post('items/import/upload', [ImportController::class, 'upload'])->defaults('entity', 'items')->middleware('throttle:5,10')->name('items.import.upload');
+        Route::get('items/import/{batch}', [ImportController::class, 'preview'])->defaults('entity', 'items')->name('items.import.preview');
+        Route::post('items/import/{batch}/mapping', [ImportController::class, 'map'])->defaults('entity', 'items')->middleware('throttle:10,1')->name('items.import.mapping');
+        Route::post('items/import/{batch}/process', [ImportController::class, 'process'])->defaults('entity', 'items')->middleware(['subscription', 'throttle:5,10'])->name('items.import.process');
+    });
 
     Route::middleware(['can:write-records', 'subscription', 'throttle:60,1'])->group(function () {
         Route::post('items', [ItemController::class, 'store'])->name('items.store');

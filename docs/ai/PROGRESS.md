@@ -8,6 +8,17 @@
 - **Migration state:** Phase 7 migration applied to local MySQL and invoiceiq_test on 2026-10-28.
 - **Automated tests:** Focused Phase 7 tests pass: 7 tests, 41 assertions. Full MySQL suite passes: **97 tests, 750 assertions** (2026-10-29). Real SMTP/provider/VPS/backup restore/legal review remain unverified.
 
+### Bulk import - Steps 1 to 3 (2026-10-30)
+
+- Added role-gated Excel and UTF-8 CSV template downloads to Customer and Item pages, using the actual current schema and form requirements.
+- Excel templates include Data, Instructions and Lists sheets, two marked grey sample rows, frozen header, GST state/code and item dropdowns. CSV has the matching header/sample rows.
+- Added a responsive native-dialog flow with a working file chooser/dropzone, client file feedback, secure server upload, smart column matching/manual mapping, whole-file row validation and paginated preview.
+- Preview batches/rows are tenant scoped, files remain on private storage and duplicate checks are tenant scoped. Processing is one tenant-row-locked transaction; the user can add Ready rows and skip warning/error rows, or stop with no writes if any issues remain. Completed rows are visible and cannot be processed again.
+- Added retention cleanup after 30 days by default and composite tenant/batch database integrity. Migration applied to local MySQL and invoiceiq_test.
+- Focused upload/import tests pass: 6 tests, 54 assertions; template tests pass separately: 2 tests, 29 assertions. Full MySQL suite passes: 105 tests, 833 assertions (2026-10-30).
+- Current plans have no customer/item quotas; invoice/member limits do not apply to this import. Subscription write access is checked before and inside the transaction. See `IMPORT_FEATURE.md`.
+- Follow-up from browser screenshot: fixed the native dialog reset issue that removed its centering margin and corrected its surface variable so the guide is opaque and centered.
+
 ## Completed
 
 - Documented current schema/features and the SaaS conversion plan in Phase 0.

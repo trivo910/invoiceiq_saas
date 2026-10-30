@@ -170,3 +170,7 @@ php artisan schedule:list
 ```
 
 No actual SMTP/email recipient or provider API/payment was used by these tests. PHP syntax and Blade compilation passed. Production cron/SMTP, manual browser/mobile review and large-export/crash behavior are not claimed verified. Initial test failures were addressed by using the available Artisan call API without adding Mockery and loading persisted invoice defaults in the scoped PDF service.
+
+## Bulk import - 2026-10-30
+
+Focused upload/import coverage passes: `php vendor/bin/phpunit tests/Feature/ImportUploadTest.php` (**6 tests, 54 assertions**). Template coverage passes: `php vendor/bin/phpunit tests/Feature/ImportTemplateTest.php` (**2 tests, 29 assertions**). The complete MySQL suite passes: `php vendor/bin/phpunit` (**105 tests, 833 assertions**). Coverage includes CSV validation without writes, manual heading mapping, cross-tenant duplicate isolation, access/extension denials, customer and item persistence, stop-on-issues rollback, warning-row skipping, and repeat-submit protection. The preview migration is applied to local MySQL and invoiceiq_test. Blade compilation, all 12 import routes and daily pruning schedule registration pass. Manual browser interaction, real XLS/XLSX fixtures, retention execution and production cron remain unverified.
