@@ -2,6 +2,11 @@
 
 ## Current position
 
+### Local Docker setup (2026-10-30)
+
+- Added a PHP/Apache Dockerfile and local Compose services for MySQL, persistent tenant storage and an optional Laravel scheduler. The Dockerfile now targets PHP 8.3; the stack uses a separate `.env.docker` and an isolated database volume, and migrations and seeding remain explicit commands.
+- Compose YAML was parsed and its service, volume and dependency references checked. Locked package PHP constraints accept PHP 8.3.0. Docker is not installed on the current machine, so the PHP 8.3 image build, container startup and runtime tests remain unverified; local XAMPP CLI is PHP 8.2.4. See `DEPLOYMENT.md` and the root README for setup and verification steps.
+
 - **Phase:** 7 - Launch hardening (implementation in progress; provider/commercial and production operations remain open)
 - **Status:** Implemented public landing/pricing pages, fictional/referenceable legal sample drafts, tenant activity auditing, owner workspace soft deletion and platform recovery, baseline security headers, SMTP-password-at-rest encryption, tax identifier format normalization and release configuration checks. User approved creating fictional placeholder legal data; approval remains false and sample pages are not launch-ready.
 - **Code changes:** Phase 7 additive migration, tenant audit hooks, workspace lifecycle and pages, public routes/views, release check/encryption commands, setup safety, VPS nginx sample and documentation. Existing GST math is unchanged.

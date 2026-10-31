@@ -1,5 +1,10 @@
 # SaaS conversion roadmap
 
+## Local Docker development
+
+- [x] Add a PHP/Apache image and isolated MySQL/storage Compose setup with an optional scheduler and startup instructions.
+- [ ] Build and run the PHP 8.3 stack on a machine with Docker, then verify Composer platform requirements, migration, login, private files, queued work and cleanup.
+
 Status: **Phases 1-3, 5 and 6 implementation ready; Phase 7 implementation in progress; Phase 4 provider/commercial and production operations pending.**
 
 ## Phase 0 — Documentation setup

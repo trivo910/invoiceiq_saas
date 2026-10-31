@@ -4,6 +4,16 @@
 
 Root `README.md` describes PHP 8.2+, Composer, `php artisan migrate --seed`, and local serving. Phases 1 and 2 add `.env.example` with MySQL, database queue, and log mail defaults; `setup.sh` configures MySQL interactively and runs Composer/migrations/seeding. No production deployment was verified.
 
+## Local Docker development
+
+`Dockerfile` targets PHP 8.3 with Apache, locked Composer dependencies and the PHP extensions needed by MySQL, spreadsheet handling and PDF generation. Apache serves only `public/`; the build excludes local environment files, tenant storage and dependencies from the build context. `compose.yaml` adds a MySQL 8.0 service, persistent database and Laravel storage volumes, and an optional scheduler profile. It uses local example database credentials and binds the app to `127.0.0.1:8080`.
+
+Use the PowerShell instructions in the root README. Create `.env.docker` from `.env.example` only when absent, generate a key with `key:generate --show` only when its key is blank, and retain that key with any database and storage backup. Compose loads `.env.docker` while its explicit environment entries override the database host and credentials. The database volume starts separately from XAMPP, and neither migrations nor seeders run automatically. The scheduler profile should be started after migrations; it runs Laravel's existing scheduler, including the database queue worker and pruning commands. [Docker Compose service configuration](https://docs.docker.com/reference/compose-file/services/)
+
+The image contains a snapshot of the source at build time. Rebuild the app and scheduler after code changes. `docker compose down` retains named volumes; removing them deletes the container database and private tenant files. For real data, back up the database, storage volume and matching APP_KEY together before migration or restore. Compose YAML and service references were checked with a YAML parser. This local stack has not been built or run on this machine because Docker is not installed; it is not a verified VPS deployment or production configuration.
+
+To apply the PHP 8.3 image after Docker is installed, run `docker compose --profile scheduler up -d --build`, then `docker compose exec app php -v` and `docker compose exec --user www-data app composer check-platform-reqs`. First-time setup and APP_KEY instructions are in the root README. The local XAMPP PHP installation is separate from the Docker image. The root Composer PHP constraint remains `^8.2`, which permits 8.3; locked package PHP version constraints were checked against 8.3.0 locally, but a PHP 8.3 build and runtime test have not yet been performed.
+
 Set `MAIL_MAILER=smtp`, `MAIL_HOST`, `MAIL_PORT`, optional `MAIL_USERNAME`/`MAIL_PASSWORD`, `MAIL_SCHEME` when needed, and `MAIL_FROM_ADDRESS`/`MAIL_FROM_NAME` for verification, password reset, and invitation delivery. The `log` mailer is suitable only for local development.
 
 After upgrading Phase 2 installations, run `php artisan tenants:migrate-legacy-logos` once to move any legacy public logo files and references into tenant-private storage. New onboarding and settings uploads already use private tenant paths.

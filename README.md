@@ -15,6 +15,33 @@ Or run `bash setup.sh` after preparing `.env` and creating the MySQL database. T
 
 Open: **http://localhost:8000**
 
+## Local development with Docker
+
+Install Docker Desktop with Compose, then run these commands from the project directory in PowerShell. This setup uses a separate Docker MySQL database and storage volume; existing XAMPP data is not imported automatically.
+
+```powershell
+if (!(Test-Path .env.docker)) { Copy-Item .env.example .env.docker }
+docker compose build app
+```
+
+If `APP_KEY` in `.env.docker` is empty, run the command below and paste its output into that file. Preserve an existing key; it is needed to read encrypted data.
+
+```powershell
+docker compose run --rm --no-deps --user www-data app php artisan key:generate --show
+```
+
+Then start the app and apply migrations:
+
+```powershell
+docker compose up -d
+docker compose exec --user www-data app php artisan migrate
+docker compose --profile scheduler up -d scheduler
+```
+
+Open **http://localhost:8080**. The scheduler runs queued work and scheduled cleanup. The setup does not automatically seed demo users or data. It uses disposable database passwords defined in `compose.yaml` and is intended for local development only. It loads `.env.docker`, independently of your existing `.env`, and overrides its database settings with the Docker database values.
+
+The Docker image uses PHP 8.3; the project's minimum requirement remains PHP 8.2. The application source is copied into the image. After changing code or the PHP image, rebuild with `docker compose --profile scheduler up -d --build`, then check the container version with `docker compose exec app php -v`. `docker compose down` stops the stack while retaining the database and private storage volumes. Do not remove those volumes unless you intend to delete their data. See `docs/ai/DEPLOYMENT.md` for storage, key and production notes.
+
 ## What's included
 
 | Feature | Details |

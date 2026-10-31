@@ -1,5 +1,13 @@
 # Changelog
 
+## Docker PHP 8.3 target (2026-10-30)
+
+Changed the local Docker PHP/Apache base image to PHP 8.3. The existing Composer requirement `^8.2` permits 8.3, and locked package PHP version constraints accept 8.3.0. Docker and PHP 8.3 runtime tests remain unavailable on this machine; rebuild and platform checks are documented in `DEPLOYMENT.md`.
+
+## Local Docker development (2026-10-30)
+
+Added a PHP 8.2/Apache Dockerfile, build-context exclusions and local Compose services for MySQL, persistent app storage and an optional Laravel scheduler. Added instructions for a separate Docker environment file, application key, manual migrations and persistent volumes. Docker is unavailable on this machine, so a container build or startup has not been verified.
+
 ## Bulk Import - Step 3 (2026-10-30)
 
 Added explicit import processing for customer/item previews. The user can import Ready rows and skip rows with warnings/errors, or stop the whole batch when any issue remains. Selected business rows, preview statuses and batch completion are committed in one tenant-row-locked transaction after checking subscription write access; repeat processing is rejected. Unique conflicts roll back the whole batch. Current plans have no customer/item quotas, so no unrelated invoice/member quota is applied. Focused upload/import tests pass (6 tests, 54 assertions); the full MySQL suite passes (105 tests, 833 assertions).

@@ -1,5 +1,9 @@
 # Testing strategy
 
+## Docker PHP 8.3 target - 2026-10-30
+
+Checked the root Composer PHP requirement and the PHP require/conflict constraints in all locked production and development packages against PHP 8.3.0 using the installed Composer Semver library; no constraint rejected that version. This is a constraint check only, not a container build or runtime test. Docker is unavailable and the local XAMPP CLI is PHP 8.2.4. After Docker is installed, rebuild as described in `DEPLOYMENT.md`, verify `php -v` and `composer check-platform-reqs` inside the container, and run application checks with a separate test database.
+
 ## Current state
 
 PHPUnit 11 is a development dependency. Phase 3 added MySQL-backed two-tenant feature tests. Tests use a separate `invoiceiq_test` database configured in `phpunit.xml`; preserve the local `.env` DB host/user/password and do not point the test config at the development database. PHPUnit explicitly disables billing demo mode so checkout and invoice integration tests exercise their configured sandbox paths.
